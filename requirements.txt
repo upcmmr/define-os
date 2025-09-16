@@ -1,0 +1,26 @@
+# Define OS - Current Active System Dependencies
+# Screenshot capture, AI analysis, and web UI system
+
+# Core HTTP functionality for URLBox API
+requests>=2.25.1
+
+# Browser automation for element height measurement
+playwright>=1.40.0
+
+# Image processing for screenshot cropping and base64 encoding
+pillow>=10.0.0
+
+# OpenAI GPT-5 API for header analysis
+openai>=1.0.0
+
+# Environment variable management for API keys
+python-dotenv>=1.0.0
+
+# Standard library modules used (no installation required):
+# - urllib.parse for URL handling
+# - pathlib for file operations
+# - json for JSON processing
+# - base64 for image encoding
+# - re for regex pattern matching
+# - asyncio for async operations
+# - sys for stderr redirection
