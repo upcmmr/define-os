@@ -10,6 +10,9 @@ playwright>=1.40.0
 # Image processing for screenshot cropping and base64 encoding
 pillow>=10.0.0
 
+# HTML parsing for preprocessing before AI analysis
+beautifulsoup4>=4.12.0
+
 # OpenAI GPT-5 API for header analysis
 openai>=1.0.0
 

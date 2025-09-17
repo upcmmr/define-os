@@ -1,6 +1,7 @@
 import asyncio
+import sys
 from playwright.async_api import async_playwright
-from typing import Optional
+from typing import Optional, Tuple
 
 async def _find_robust_element(page, selectors_string: str):
     """
@@ -83,6 +84,98 @@ async def _multi_stage_load(page, url: str):
     # Stage 4: Small delay for any remaining async operations
     await page.wait_for_timeout(1500)
     print("    > Page loading complete")
+
+async def extract_header_footer_body_html(url: str, header_selector: str, footer_selector: str) -> Tuple[str, str, str]:
+    """
+    Navigate to a URL and extract HTML content from header, footer, and body elements.
+    
+    Args:
+        url: The URL to navigate to
+        header_selector: CSS selector(s) for header element (comma-separated)
+        footer_selector: CSS selector(s) for footer element (comma-separated)
+        
+    Returns:
+        Tuple of (header_html, footer_html, body_html) strings
+    """
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(
+            args=[
+                '--disable-blink-features=AutomationControlled',
+                '--disable-dev-shm-usage',
+                '--no-sandbox',
+                '--disable-web-security'
+            ]
+        )
+        try:
+            page = await _create_robust_page(browser)
+            await _multi_stage_load(page, url)
+            
+            # Extract header HTML
+            print("    > Extracting header HTML content...")
+            header_html = ""
+            try:
+                header_element = await _find_robust_element(page, header_selector)
+                if header_element:
+                    header_html = await header_element.inner_html()
+                    print(f"    > Header HTML extracted: {len(header_html)} characters")
+                else:
+                    print("    > Warning: No header element found for HTML extraction", file=sys.stderr)
+            except Exception as e:
+                print(f"    > Warning: Could not extract header HTML: {str(e)}", file=sys.stderr)
+            
+            # Trigger lazy loading for footer
+            print("    > Triggering lazy-loaded content for footer...")
+            await _trigger_lazy_loading(page)
+            
+            # Extract footer HTML
+            print("    > Extracting footer HTML content...")
+            footer_html = ""
+            try:
+                footer_element = await _find_robust_element(page, footer_selector)
+                if footer_element:
+                    footer_html = await footer_element.inner_html()
+                    print(f"    > Footer HTML extracted: {len(footer_html)} characters")
+                else:
+                    print("    > Warning: No footer element found for HTML extraction", file=sys.stderr)
+            except Exception as e:
+                print(f"    > Warning: Could not extract footer HTML: {str(e)}", file=sys.stderr)
+            
+            # Extract body HTML (everything except header and footer)
+            print("    > Extracting body HTML content...")
+            body_html = ""
+            try:
+                # Get the body element content only (not the full document)
+                body_element = await page.query_selector('body')
+                if body_element:
+                    body_html = await body_element.inner_html()
+                    
+                    # If we found header element, remove it from body HTML
+                    if header_html:
+                        header_element = await _find_robust_element(page, header_selector)
+                        if header_element:
+                            header_outer_html = await header_element.evaluate('el => el.outerHTML')
+                            body_html = body_html.replace(header_outer_html, '', 1)
+                    
+                    # If we found footer element, remove it from body HTML
+                    if footer_html:
+                        footer_element = await _find_robust_element(page, footer_selector)
+                        if footer_element:
+                            footer_outer_html = await footer_element.evaluate('el => el.outerHTML')
+                            body_html = body_html.replace(footer_outer_html, '', 1)
+                    
+                    print(f"    > Body HTML extracted: {len(body_html)} characters")
+                else:
+                    print("    > Warning: No body element found", file=sys.stderr)
+                    # Fallback: get full page content if no body element
+                    body_html = await page.content()
+            except Exception as e:
+                print(f"    > Warning: Could not extract body HTML: {str(e)}", file=sys.stderr)
+                # Fallback: use full page HTML if body extraction fails
+                body_html = await page.content()
+            
+            return header_html, footer_html, body_html
+        finally:
+            await browser.close()
 
 async def get_element_height(url: str, selector: str) -> int:
     """

@@ -8,7 +8,8 @@ from dotenv import load_dotenv
 from urlbox import UrlboxClient
 from PIL import Image
 
-from .analyzer import get_element_height, get_footer_height_after_scroll
+from .analyzer import get_element_height, get_footer_height_after_scroll, extract_header_footer_body_html
+from .html_cleaner import clean_all_html_files
 
 # --- Initialization ---
 load_dotenv()
@@ -17,7 +18,7 @@ class ScreenshotProcessor:
     """
     A robust hybrid class to capture and crop website screenshots.
     - Uses URLBox for high-fidelity full-page screenshots.
-    - Uses Playwright for accurate element height analysis.
+    - Uses Playwright for accurate element height analysis and HTML extraction.
     """
     def __init__(self, config_path: Path):
         """Initialize the processor with configuration and URLBox client."""
@@ -52,13 +53,39 @@ class ScreenshotProcessor:
         output_path = base_output_dir / f"{sanitized_url}_{timestamp}"
         output_path.mkdir(parents=True, exist_ok=True)
         
-        # --- Phase 1: Analyze heights with Playwright ---
-        print("  > Phase 1: Analyzing element heights with Playwright...")
+        # --- Phase 1: Analyze heights and extract HTML with Playwright ---
+        print("  > Phase 1: Analyzing element heights and extracting HTML with Playwright...")
         header_selectors = ",".join(self.config['header_selectors'])
         footer_selectors = ",".join(self.config['footer_selectors'])
 
+        # Get element heights
         header_height = await get_element_height(url, header_selectors)
         footer_height = await get_footer_height_after_scroll(url, footer_selectors)
+        
+        # Extract header, footer, and body HTML content
+        print("  > Extracting header, footer, and body HTML content...")
+        header_html, footer_html, body_html = await extract_header_footer_body_html(url, header_selectors, footer_selectors)
+        
+        # Save header, footer, and body HTML to separate files
+        header_html_path = output_path / "header.html"
+        footer_html_path = output_path / "footer.html"
+        body_html_path = output_path / "body.html"
+        
+        with open(header_html_path, "w", encoding="utf-8") as f:
+            f.write(header_html)
+        print(f"    > Header HTML saved: {header_html_path.name}")
+        
+        with open(footer_html_path, "w", encoding="utf-8") as f:
+            f.write(footer_html)
+        print(f"    > Footer HTML saved: {footer_html_path.name}")
+        
+        with open(body_html_path, "w", encoding="utf-8") as f:
+            f.write(body_html)
+        print(f"    > Body HTML saved: {body_html_path.name}")
+        
+        # Clean HTML files for AI analysis
+        print("  > Cleaning HTML files for AI analysis...")
+        cleaning_results = clean_all_html_files(output_path)
         
         if header_height == 0:
              print("  > WARNING: Header height is 0. Header crop may be blank.")
@@ -67,11 +94,10 @@ class ScreenshotProcessor:
         print(f"    > Measured Header Height: {header_height}px")
         print(f"    > Measured Footer Height: {footer_height}px")
 
-        # --- Phase 2: Capture screenshot and HTML with URLBox ---
-        print("  > Phase 2: Capturing screenshot and HTML with URLBox...")
-        fullpage_path, html_path = await self._capture_full_page(url, output_path)
+        # --- Phase 2: Capture screenshot with URLBox ---
+        print("  > Phase 2: Capturing screenshot with URLBox...")
+        fullpage_path = await self._capture_full_page(url, output_path)
         print(f"    > Screenshot saved: {fullpage_path.name}")
-        print(f"    > HTML saved: {html_path.name}")
         
         # --- Phase 3: Crop sections locally ---
         print("  > Phase 3: Cropping sections locally...")
@@ -80,8 +106,8 @@ class ScreenshotProcessor:
         print(f"--- Successfully processed {url} ---")
         print(f"   > Output saved in: {output_path}")
 
-    async def _capture_full_page(self, url: str, output_path: Path) -> tuple[Path, Path]:
-        """Capture both full-page screenshot and HTML using URLBox API."""
+    async def _capture_full_page(self, url: str, output_path: Path) -> Path:
+        """Capture full-page screenshot using URLBox API."""
         # Capture screenshot
         screenshot_options = {
             "url": url,
@@ -99,23 +125,7 @@ class ScreenshotProcessor:
         with open(screenshot_path, "wb") as f:
             f.write(screenshot_response.content)
         
-        # Capture HTML
-        html_options = {
-            "url": url,
-            "format": "html",
-            "click": ",".join(self.config['modal_close_selectors']),
-            **self.config['screenshot_options']
-        }
-        
-        html_response = self.urlbox_client.get(html_options)
-        if html_response.status_code != 200:
-            raise Exception(f"URLBox failed to capture HTML: {html_response.text}")
-            
-        html_path = output_path / "page.html"
-        with open(html_path, "w", encoding="utf-8") as f:
-            f.write(html_response.text)
-        
-        return screenshot_path, html_path
+        return screenshot_path
 
     def _crop_sections(self, fullpage_path: Path, header_height: int, footer_height: int, output_path: Path):
         """Crop the full-page screenshot into header, body, and footer sections."""

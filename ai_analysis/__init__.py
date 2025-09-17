@@ -16,5 +16,6 @@ Usage:
 """
 
 from .header_analyzer import analyze_header_elements
+from .footer_analyzer import analyze_footer_elements
 
-__all__ = ['analyze_header_elements']
+__all__ = ['analyze_header_elements', 'analyze_footer_elements']

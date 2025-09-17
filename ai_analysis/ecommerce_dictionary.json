@@ -1,0 +1,596 @@
+{
+    "templates": [
+        {
+            "name": "Header Template",
+            "description": "The global site header that appears on every page, containing the main navigation and site identity elements.:contentReference[oaicite:0]{index=0}",
+            "features": [
+                {
+                    "name": "Logo",
+                    "description": "A prominently displayed brand logo (usually top-left or centered) that links back to the homepage.:contentReference[oaicite:1]{index=1}"
+                },
+                {
+                    "name": "Promotional Bar",
+                    "description": "A top-of-page banner (above or integrated into the header) highlighting key promotions or announcements (e.g. free shipping offers, flash sales):contentReference[oaicite:2]{index=2}."
+                },
+                {
+                    "name": "Utility Bar",
+                    "description": "A secondary header row for utility links such as account login, store locator, or language selector, to keep the main navigation uncluttered.:contentReference[oaicite:3]{index=3}"
+                },
+                {
+                    "name": "Navigation Menu",
+                    "description": "The primary site menu with category links (often with dropdown sub-menus or a mega menu for subcategories) for browsing the catalog.:contentReference[oaicite:4]{index=4}"
+                },
+                {
+                    "name": "Search Box",
+                    "description": "A search field for users to search products by keyword, typically with predictive autocomplete suggestions as they type.:contentReference[oaicite:5]{index=5}"
+                },
+                {
+                    "name": "Account/Login Link",
+                    "description": "Link or icon for user account access (login/register or profile dashboard) so customers can sign in and manage their accounts.:contentReference[oaicite:6]{index=6}"
+                },
+                {
+                    "name": "Wishlist Link",
+                    "description": "Link or icon (often a heart) to access the wishlist or favorites, allowing users to view products they saved for later.:contentReference[oaicite:7]{index=7}"
+                },
+                {
+                    "name": "Cart Icon",
+                    "description": "Shopping cart icon displaying current cart item count; clicking it shows a mini-cart preview or navigates to the cart page.:contentReference[oaicite:8]{index=8}"
+                },
+                {
+                    "name": "Currency/Language Selector",
+                    "description": "Dropdown for selecting regional settings like local currency or language, for international sites.:contentReference[oaicite:9]{index=9}"
+                },
+                {
+                    "name": "Store Locator Link",
+                    "description": "Shortcut to a store finder page, enabling customers to find physical store locations (often found in a top utility bar).:contentReference[oaicite:10]{index=10}"
+                },
+                {
+                    "name": "Contact/Help Link",
+                    "description": "Link to customer service or help (e.g. Contact Us or FAQ), ensuring users can quickly get support contact details.:contentReference[oaicite:11]{index=11}"
+                },
+                {
+                    "name": "Live Chat Trigger",
+                    "description": "An icon or button to launch a live chat support widget (if enabled), providing real-time assistance to users.:contentReference[oaicite:12]{index=12}"
+                },
+                {
+                    "name": "Cookie Consent Banner",
+                    "description": "A banner (often at the bottom of the page on first visit) asking the user to accept cookies or tracking, to comply with privacy regulations.:contentReference[oaicite:13]{index=13}"
+                }
+            ]
+        },
+        {
+            "name": "Homepage Template",
+            "description": "The main landing page of the site, featuring promotional content, featured products, and navigation to key categories.",
+            "features": [
+                {
+                    "name": "Hero Banner/Carousel",
+                    "description": "A large feature banner or image slider at the top of the homepage showcasing major promotions or new products.:contentReference[oaicite:14]{index=14}"
+                },
+                {
+                    "name": "Featured Category Links",
+                    "description": "Sections highlighting top categories or collections (often with images or icons) that help users shop by category.:contentReference[oaicite:15]{index=15}"
+                },
+                {
+                    "name": "Promotional Campaign Banner",
+                    "description": "Clickable promotional graphics or banners on the homepage highlighting sales, campaigns, or important content.:contentReference[oaicite:16]{index=16}"
+                },
+                {
+                    "name": "Featured Products Carousel",
+                    "description": "A rotating or sliding showcase of select products (e.g. new arrivals, best sellers), often with an option to add to cart or wishlist directly.:contentReference[oaicite:17]{index=17}"
+                },
+                {
+                    "name": "Product Tile",
+                    "description": "Standard product display units showing a product’s image, name, price (and possibly rating), used in grids or carousels.:contentReference[oaicite:18]{index=18}"
+                },
+                {
+                    "name": "Quick View Modal",
+                    "description": "A quick-view pop-up that lets users preview product details (image, price, short description, add-to-cart) without leaving the current page.:contentReference[oaicite:19]{index=19}"
+                },
+                {
+                    "name": "Personalized Recommendations",
+                    "description": "Dynamic product suggestions (such as ‘Recommended For You’ or ‘Trending Now’) possibly driven by user behavior or AI.:contentReference[oaicite:20]{index=20}"
+                },
+                {
+                    "name": "Content Blocks",
+                    "description": "Informational or brand content sections (e.g. about the brand, value propositions, blog snippets, or social media feeds) embedded in the homepage layout."
+                },
+                {
+                    "name": "Email Signup Callout",
+                    "description": "A newsletter subscription form or call-to-action on the homepage encouraging users to subscribe (sometimes in the footer or as a pop-up).:contentReference[oaicite:21]{index=21}"
+                },
+                {
+                    "name": "Testimonials/Social Proof",
+                    "description": "Sections featuring customer testimonials, reviews, or social media posts to build trust and engagement on the homepage."
+                }
+            ]
+        },
+        {
+            "name": "Category Page Template",
+            "description": "The product listing page for a given category (or collection) of products, typically displaying a grid or list of products with refinement options.",
+            "features": [
+                {
+                    "name": "Category Header",
+                    "description": "The title or banner of the category, often including a category name, description, or image to inform users about the current category."
+                },
+                {
+                    "name": "Breadcrumbs",
+                    "description": "A horizontal list of links indicating the user’s navigational path (e.g., Home > Category > Subcategory) for easy back-tracking.:contentReference[oaicite:22]{index=22}"
+                },
+                {
+                    "name": "Product Grid/List",
+                    "description": "A grid or list display of products in the category, showing each product’s thumbnail image, name, price, and possibly rating or a short description."
+                },
+                {
+                    "name": "Filter/Faceted Navigation",
+                    "description": "Sidebar or horizontal filters that allow narrowing down products by attributes like price, brand, color, size, etc., often with multi-select options.:contentReference[oaicite:23]{index=23}"
+                },
+                {
+                    "name": "Sort Options",
+                    "description": "A control (dropdown or buttons) to sort the product results by criteria such as price, popularity, newest, or ratings.:contentReference[oaicite:24]{index=24}"
+                },
+                {
+                    "name": "Pagination or Infinite Scroll",
+                    "description": "Navigation to traverse through multiple pages of products (page numbers or 'Load More' button), or an infinite scrolling feature that loads more products as the user scrolls.:contentReference[oaicite:25]{index=25}"
+                },
+                {
+                    "name": "Product Tile Actions",
+                    "description": "Quick actions on product tiles such as 'Add to Cart', 'Add to Wishlist', or 'Compare', enabling those interactions directly from the listing.:contentReference[oaicite:26]{index=26}"
+                },
+                {
+                    "name": "Quick View Trigger",
+                    "description": "An icon or button on each product tile to open a quick-view modal for that product without leaving the listing page.:contentReference[oaicite:27]{index=27}"
+                },
+                {
+                    "name": "View Toggle (Grid/List)",
+                    "description": "An option to switch the layout view between grid and list displays, allowing user preference in browsing (if supported).:contentReference[oaicite:28]{index=28}"
+                },
+                {
+                    "name": "Product Count Display",
+                    "description": "A text indication of how many products are being shown and/or total results, to inform the user of the scope of items found."
+                }
+            ]
+        },
+        {
+            "name": "Search Results Template",
+            "description": "The page displaying results for a user's search query, similar to a category page but generated by keyword search.",
+            "features": [
+                {
+                    "name": "Search Query Display",
+                    "description": "A heading or note showing the search term and number of results found, confirming what the user searched for."
+                },
+                {
+                    "name": "Search Results Grid/List",
+                    "description": "A listing of products matching the search query, presented similarly to a category product grid with product tiles."
+                },
+                {
+                    "name": "Refinement Filters",
+                    "description": "Filters to narrow search results by attributes (category, price, etc.), just like on category pages, to help drill down large result sets.:contentReference[oaicite:29]{index=29}"
+                },
+                {
+                    "name": "Sort Results",
+                    "description": "Option to sort search results (e.g., by relevance, price, rating), allowing users to reorder the results."
+                },
+                {
+                    "name": "Search Suggestions",
+                    "description": "As-you-type suggestions and auto-complete that appear in the search bar drop-down, including popular search terms or products (predictive search).:contentReference[oaicite:30]{index=30}"
+                },
+                {
+                    "name": "Did You Mean",
+                    "description": "Alternate query suggestions shown when the search query might be misspelled or return few results (e.g., 'Did you mean ...').:contentReference[oaicite:31]{index=31}"
+                },
+                {
+                    "name": "No Results Message",
+                    "description": "A user-friendly message displayed if no products match the query, often with search tips or recommended products to encourage further browsing.:contentReference[oaicite:32]{index=32}"
+                },
+                {
+                    "name": "Include Content Pages",
+                    "description": "If applicable, the search may also return non-product results (like blog articles or help pages) and provide a way to view those.:contentReference[oaicite:33]{index=33}"
+                }
+            ]
+        },
+        {
+            "name": "Product Detail Template",
+            "description": "The page for an individual product, providing comprehensive information and purchase options for that item.",
+            "features": [
+                {
+                    "name": "Product Image Gallery",
+                    "description": "A main product image with additional thumbnail images; supports zoom, carousel, and possibly video or 3D media for the product.:contentReference[oaicite:34]{index=34}"
+                },
+                {
+                    "name": "Product Title & Description",
+                    "description": "The product name and a detailed description or overview of the product’s features, materials, or usage."
+                },
+                {
+                    "name": "Pricing Display",
+                    "description": "Clear pricing information, including the price (with any sale price or discounts), and if applicable, installment or unit pricing details.:contentReference[oaicite:35]{index=35}"
+                },
+                {
+                    "name": "Stock Availability",
+                    "description": "Indication of stock status (e.g., 'In Stock', 'Only 2 left', or 'Out of Stock') and whether backorder or pre-order is available."
+                },
+                {
+                    "name": "Variations/Options Selection",
+                    "description": "Options for selecting product variants such as size, color, or configuration; selecting a variant updates the price or stock if necessary.:contentReference[oaicite:36]{index=36}"
+                },
+                {
+                    "name": "Add to Cart Button",
+                    "description": "A prominent button to add the item to the shopping cart (usually disabled or updated if a required variant is not selected or if the item is out of stock)."
+                },
+                {
+                    "name": "Quantity Selector",
+                    "description": "Input (usually +/− buttons or a dropdown) for choosing the quantity of the item to add to cart."
+                },
+                {
+                    "name": "Add to Wishlist/Registry",
+                    "description": "Option to save the product to a wishlist or gift registry instead of purchasing immediately (generally for logged-in users).:contentReference[oaicite:37]{index=37}"
+                },
+                {
+                    "name": "Compare Button",
+                    "description": "If product compare is supported, a button to add this product to a comparison list so it can be compared side-by-side with others.:contentReference[oaicite:38]{index=38}"
+                },
+                {
+                    "name": "Product Details Section",
+                    "description": "Additional information like specifications, size guide (for apparel), ingredients (for consumables), or other details, often organized in tabs or accordions.:contentReference[oaicite:39]{index=39}"
+                },
+                {
+                    "name": "Customer Reviews",
+                    "description": "Display of product ratings (e.g., star rating) and customer reviews, plus an option to submit a new review (often via third-party integration).:contentReference[oaicite:40]{index=40}"
+                },
+                {
+                    "name": "Related Products",
+                    "description": "A section showing products similar to or commonly bought with the current item (e.g., \"You may also like\" suggestions).:contentReference[oaicite:41]{index=41}"
+                },
+                {
+                    "name": "Upsell/Cross-sell Products",
+                    "description": "Suggested complementary products or accessories often displayed on the product page (for example, matching items or required add-ons).:contentReference[oaicite:42]{index=42}"
+                },
+                {
+                    "name": "Social Sharing Buttons",
+                    "description": "Buttons to share the product page on social media platforms (e.g., Facebook, Pinterest, Twitter).:contentReference[oaicite:43]{index=43}"
+                },
+                {
+                    "name": "Trust Badges",
+                    "description": "Icons or messages conveying security or guarantees (e.g., secure checkout, warranty, money-back guarantee) near the add-to-cart button to reassure customers."
+                },
+                {
+                    "name": "Shipping/Return Info",
+                    "description": "Key shipping, delivery, or return policy information (or links to it), often summarized on the product page to inform purchase decisions."
+                },
+                {
+                    "name": "In-Store Pickup Availability",
+                    "description": "If the retailer has physical stores, an indicator if the product is available for pickup at a nearby store, with a tool to check store availability.:contentReference[oaicite:44]{index=44}"
+                }
+            ]
+        },
+        {
+            "name": "Cart Template",
+            "description": "The shopping cart (basket) page where users review items they intend to purchase, update quantities, and proceed to checkout.",
+            "features": [
+                {
+                    "name": "Cart Item List",
+                    "description": "A list of all products added to the cart, each with a thumbnail image, product name, selected options (e.g., size/color), price, quantity, and subtotal.:contentReference[oaicite:45]{index=45}"
+                },
+                {
+                    "name": "Edit Cart Items",
+                    "description": "Controls to update item quantities (or remove items) directly in the cart; changes update the cart totals dynamically.:contentReference[oaicite:46]{index=46}"
+                },
+                {
+                    "name": "Order Summary",
+                    "description": "A summary of cart totals, including subtotal, any discounts, tax estimates, shipping (if available at this stage), and the grand total.:contentReference[oaicite:47]{index=47}"
+                },
+                {
+                    "name": "Promo Code Entry",
+                    "description": "A field to enter a discount or coupon code and apply it to the cart, which then shows the discount amount if valid.:contentReference[oaicite:48]{index=48}"
+                },
+                {
+                    "name": "Shipping Estimate",
+                    "description": "An option to estimate shipping costs (often by entering a ZIP code or selecting a country) before checkout, if the platform supports it."
+                },
+                {
+                    "name": "Continue Shopping Link",
+                    "description": "A link or button to return to product browsing (often takes the user back to the last category or homepage) for continued shopping if desired."
+                },
+                {
+                    "name": "Proceed to Checkout",
+                    "description": "A clear call-to-action button that takes the user to the checkout process to complete their purchase."
+                },
+                {
+                    "name": "Cart Note/Gift Message",
+                    "description": "An optional text box for customers to add special instructions or a gift message for the order (available in some implementations)."
+                },
+                {
+                    "name": "Recommended Products in Cart",
+                    "description": "Suggested items displayed on the cart page (such as cross-sell or \"You might also like\" suggestions) to encourage additional purchases."
+                },
+                {
+                    "name": "Empty Cart Message",
+                    "description": "A message or illustration shown when the cart is empty, often with a link to start shopping or recommendations to add products.:contentReference[oaicite:49]{index=49}"
+                }
+            ]
+        },
+        {
+            "name": "Checkout Template",
+            "description": "The multi-step (or single-page) checkout process where the user enters shipping, billing, and payment information to finalize the purchase.",
+            "features": [
+                {
+                    "name": "Guest Checkout Option",
+                    "description": "Ability to checkout without creating an account (user can proceed as guest), often alongside an option to log in for returning customers.:contentReference[oaicite:50]{index=50}"
+                },
+                {
+                    "name": "Account Login Prompt",
+                    "description": "For returning customers, a prompt or option to log in to their account to pre-fill saved addresses or payment info for faster checkout.:contentReference[oaicite:51]{index=51}"
+                },
+                {
+                    "name": "Shipping Address Form",
+                    "description": "Form fields to collect the recipient’s shipping address (name, address, city, country, postal code, phone), often with address auto-complete to reduce errors."
+                },
+                {
+                    "name": "Shipping Method Selection",
+                    "description": "Options for available shipping methods (e.g., Standard, Express) with corresponding costs and estimated delivery times.:contentReference[oaicite:52]{index=52}"
+                },
+                {
+                    "name": "Billing Address Form",
+                    "description": "Form to collect billing address (if different from shipping) or a checkbox to copy the shipping address as billing address for convenience."
+                },
+                {
+                    "name": "Payment Method Entry",
+                    "description": "Section to enter payment details – credit/debit card fields (with real-time card type detection):contentReference[oaicite:53]{index=53}, and/or alternative methods like PayPal, Apple Pay, etc."
+                },
+                {
+                    "name": "Order Review",
+                    "description": "A final summary of the order (items, shipping, taxes, total) for the user to review all details before confirming the purchase."
+                },
+                {
+                    "name": "Place Order Button",
+                    "description": "The final confirmation button to submit the order. Often labeled 'Place Order' or 'Complete Purchase', triggering order processing."
+                },
+                {
+                    "name": "Save Information Options",
+                    "description": "Options to save details for future (e.g., save this address or payment method to account) or to create an account from the provided info after placing the order.:contentReference[oaicite:54]{index=54}"
+                },
+                {
+                    "name": "Order Confirmation Page",
+                    "description": "After completion, a summary page (and email) confirming the order, with an order number and details, and possibly product recommendations or next steps."
+                },
+                {
+                    "name": "Multi-Ship Shipping",
+                    "description": "If supported, the ability to ship different items in the cart to different addresses within one order (splitting the shipment by item).:contentReference[oaicite:55]{index=55}"
+                },
+                {
+                    "name": "Terms and Conditions Checkbox",
+                    "description": "A required checkbox for the customer to agree to terms of service or sales policies before placing the order."
+                },
+                {
+                    "name": "Promo/Gift Card Redemption",
+                    "description": "If not applied earlier, an opportunity to enter gift card codes or promo codes during checkout (some stores handle this in the cart step)."
+                }
+            ]
+        },
+        {
+            "name": "My Account Template",
+            "description": "Pages that allow registered users to view and manage their account details, orders, and other preferences.",
+            "features": [
+                {
+                    "name": "Account Registration",
+                    "description": "A user registration page or popup allowing new customers to create an account with email and password.:contentReference[oaicite:56]{index=56}"
+                },
+                {
+                    "name": "Login Page",
+                    "description": "A login form for returning customers to access their account (often including a 'Forgot Password' link for recovery).:contentReference[oaicite:57]{index=57}"
+                },
+                {
+                    "name": "Password Reset",
+                    "description": "The ability for a user to request a password reset email by providing their registered email address (forgot password functionality).:contentReference[oaicite:58]{index=58}"
+                },
+                {
+                    "name": "Account Dashboard",
+                    "description": "An overview page after login that displays a summary of account information, such as the user's name, default address, and recent orders.:contentReference[oaicite:59]{index=59}"
+                },
+                {
+                    "name": "Profile Management",
+                    "description": "Forms to edit personal details such as name, email, password (and possibly additional profile info like phone number).:contentReference[oaicite:60]{index=60}"
+                },
+                {
+                    "name": "Address Book",
+                    "description": "An address management interface where users can add, edit, or remove saved shipping addresses for use during checkout.:contentReference[oaicite:61]{index=61}"
+                },
+                {
+                    "name": "Saved Payment Methods",
+                    "description": "If supported, a section to view or manage saved payment details (credit cards, etc.), allowing adding or removing payment methods.:contentReference[oaicite:62]{index=62}"
+                },
+                {
+                    "name": "Order History",
+                    "description": "A list of past orders the user has placed, typically with order numbers, dates, statuses, and totals, and links to view order details.:contentReference[oaicite:63]{index=63}"
+                },
+                {
+                    "name": "Order Details Page",
+                    "description": "A detailed view for a specific order from order history, showing the items purchased, shipping and payment info, status, and options like re-order."
+                },
+                {
+                    "name": "Wishlist Page",
+                    "description": "If the platform supports wishlists, a page where the user's saved wishlist items are displayed with options to move them to cart or remove.:contentReference[oaicite:64]{index=64}"
+                },
+                {
+                    "name": "Loyalty/Rewards Info",
+                    "description": "If a loyalty program is integrated, display of the user's reward points balance, tier status, or available rewards.:contentReference[oaicite:65]{index=65}"
+                },
+                {
+                    "name": "Newsletter Preferences",
+                    "description": "Option for the user to opt in or out of marketing emails or newsletters, and to manage subscription preferences."
+                }
+            ]
+        },
+        {
+            "name": "Wishlist Template",
+            "description": "A page showing the list of products a user has saved to their wishlist (favorites) for later viewing or purchase.",
+            "features": [
+                {
+                    "name": "Saved Items List",
+                    "description": "Displays products that the user added to their wishlist, each with a thumbnail, name, price, and any options (like size) if applicable.:contentReference[oaicite:66]{index=66}"
+                },
+                {
+                    "name": "Add to Cart from Wishlist",
+                    "description": "For each wishlist item, an option to add that product directly to the shopping cart (often selecting quantity or options if needed)."
+                },
+                {
+                    "name": "Remove from Wishlist",
+                    "description": "Ability to remove items from the wishlist if the user is no longer interested.:contentReference[oaicite:67]{index=67}"
+                },
+                {
+                    "name": "Share Wishlist",
+                    "description": "If supported, a feature to share the wishlist (or specific items) with others via email or social media (especially if the wishlist can be made public).:contentReference[oaicite:68]{index=68}"
+                },
+                {
+                    "name": "Privacy Settings",
+                    "description": "Option to make the wishlist public or private (visible only to the user or shareable via link), if the platform allows multiple or public wishlists.:contentReference[oaicite:69]{index=69}"
+                }
+            ]
+        },
+        {
+            "name": "Comparison Page Template",
+            "description": "A page that shows selected products side-by-side for feature comparison (if the site allows comparing products).",
+            "features": [
+                {
+                    "name": "Selected Products Table",
+                    "description": "A side-by-side display of selected products (often up to four items) in a table, allowing detailed comparison of features and specifications.:contentReference[oaicite:70]{index=70}"
+                },
+                {
+                    "name": "Comparable Attributes",
+                    "description": "Listing of key product attributes (like dimensions, features, etc.) as rows in the compare table to easily see differences between products."
+                },
+                {
+                    "name": "Remove/Add Compare Controls",
+                    "description": "Options to remove a product from the comparison, or to add another product (often via search or selecting from recently viewed) to the compare view."
+                },
+                {
+                    "name": "Direct Actions",
+                    "description": "Actions such as 'Add to Cart' or 'Wishlist' for each compared product directly from the comparison page for quick decision-making."
+                }
+            ]
+        },
+        {
+            "name": "Footer Template",
+            "description": "The global footer section appearing at the bottom of pages, containing site-wide secondary navigation, information, and trust elements.",
+            "features": [
+                {
+                    "name": "Footer Navigation Links",
+                    "description": "Sets of links organized by category (e.g. Shop, Customer Service, About Us) providing quick access to information pages and popular sections.:contentReference[oaicite:71]{index=71}"
+                },
+                {
+                    "name": "Site Map/Departments",
+                    "description": "An expanded list of site sections or a link to a full site map, helping users (and search engines) see all pages or product categories at a glance.:contentReference[oaicite:72]{index=72}"
+                },
+                {
+                    "name": "Legal Information",
+                    "description": "Links to legal pages such as Terms & Conditions, Privacy Policy, Return Policy, and a copyright notice indicating ownership and year.:contentReference[oaicite:73]{index=73}"
+                },
+                {
+                    "name": "Contact Information",
+                    "description": "Basic contact details or links (customer service phone number, email address, or contact us page) so users can easily find support.:contentReference[oaicite:74]{index=74}"
+                },
+                {
+                    "name": "Social Media Links",
+                    "description": "Icons linking to the brand's social media profiles (Facebook, Instagram, Twitter, etc.), allowing users to connect on those platforms.:contentReference[oaicite:75]{index=75}"
+                },
+                {
+                    "name": "Email Newsletter Signup",
+                    "description": "A field or form to subscribe to the newsletter, often present in the footer to capture customer emails for marketing.:contentReference[oaicite:76]{index=76}"
+                },
+                {
+                    "name": "Accepted Payment Icons",
+                    "description": "Icons or text indicating which payment methods are accepted (e.g. Visa, MasterCard, PayPal, etc.), reinforcing trust and transparency.:contentReference[oaicite:77]{index=77}"
+                },
+                {
+                    "name": "Trust Badges",
+                    "description": "Security seals or certifications (like SSL secure and other badges) displayed to reassure users of the site's safety and reliability.:contentReference[oaicite:78]{index=78}"
+                },
+                {
+                    "name": "Store Finder Link",
+                    "description": "If applicable, a link in the footer to a store locator page, for users who want to find physical store locations."
+                },
+                {
+                    "name": "Language/Currency Selector",
+                    "description": "Another placement (if not in header) for choosing site language or currency, often provided in the footer for international sites."
+                }
+            ]
+        },
+        {
+            "name": "Store Locator Template",
+            "description": "A page for finding physical store locations, typically using a map and search functionality.",
+            "features": [
+                {
+                    "name": "Location Search Bar",
+                    "description": "An input field for users to enter a location (address, ZIP code, city) to find nearby stores.:contentReference[oaicite:79]{index=79}"
+                },
+                {
+                    "name": "Store List and Map",
+                    "description": "A map displaying pins for store locations and a corresponding list of stores matching the search, including store names and addresses.:contentReference[oaicite:80]{index=80}"
+                },
+                {
+                    "name": "Distance Filtering",
+                    "description": "Option to filter or limit results by a radius (e.g., within 5 miles, 10 miles) from the entered location.:contentReference[oaicite:81]{index=81}"
+                },
+                {
+                    "name": "Store Details",
+                    "description": "Each store entry shows key details such as address, phone number, hours of operation, and services available at that location.:contentReference[oaicite:82]{index=82}"
+                },
+                {
+                    "name": "Directions Link",
+                    "description": "For each store, a link or button to get directions (often integrating with Google Maps or similar) to navigate to the store."
+                }
+            ]
+        },
+        {
+            "name": "Contact Us Template",
+            "description": "A page providing a way for customers to contact the company, typically via a form and other contact details.",
+            "features": [
+                {
+                    "name": "Contact Form",
+                    "description": "A form allowing users to send a message or inquiry (commonly fields for name, email, subject, and message) directly from the website."
+                },
+                {
+                    "name": "Contact Details",
+                    "description": "Listed contact information such as customer service email addresses, phone numbers, or physical mailing address for customer support."
+                },
+                {
+                    "name": "Submit Confirmation",
+                    "description": "After submitting the form, a confirmation message or page indicates the inquiry was received and provides any next steps or expected response time."
+                },
+                {
+                    "name": "FAQ/Help Links",
+                    "description": "Often includes links to Frequently Asked Questions or Help Center pages in case users can find answers without contacting support."
+                }
+            ]
+        },
+        {
+            "name": "Gift Registry Template",
+            "description": "Pages to support gift registries (e.g., wedding or baby registries) where customers can create lists of desired products and share with others.",
+            "features": [
+                {
+                    "name": "Create Registry",
+                    "description": "A form to create a new gift registry event with details like event name, date, location, and the registrant’s information (and co-registrant, if any).:contentReference[oaicite:83]{index=83}"
+                },
+                {
+                    "name": "Add to Registry",
+                    "description": "On product pages, an option to add items to a gift registry (similar to adding to wishlist), available when a user has created a registry.:contentReference[oaicite:84]{index=84}"
+                },
+                {
+                    "name": "Registry Item List",
+                    "description": "A view of all items in a particular gift registry, showing the desired quantity, purchased quantity, and remaining needed, for invitees to see."
+                },
+                {
+                    "name": "Share Registry",
+                    "description": "Functionality to share the registry with others via email or a sharable link, to invite friends and family to purchase items from the list.:contentReference[oaicite:85]{index=85}"
+                },
+                {
+                    "name": "Search Registries",
+                    "description": "A search feature for guests to find a registry by name or email of the registrant, if the registry is public.:contentReference[oaicite:86]{index=86}"
+                },
+                {
+                    "name": "Manage Registry",
+                    "description": "Tools for the registry owner to manage their registry, such as updating event details, adding or removing items, or deleting the registry.:contentReference[oaicite:87]{index=87}"
+                }
+            ]
+        }
+    ]
+}

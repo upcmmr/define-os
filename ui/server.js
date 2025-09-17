@@ -59,7 +59,7 @@ app.post('/process', async (req, res) => {
 
         // Step 2: Run AI analysis
         console.log('Step 2: Running AI analysis...');
-        const aiResult = await runAIAnalysis(outputDir);
+        const aiResult = await runAIAnalysis(outputDir, url);
         
         if (aiResult.error) {
             throw new Error(`AI analysis failed: ${aiResult.error}`);
@@ -75,7 +75,9 @@ app.post('/process', async (req, res) => {
                 footer: `/screenshots/${outputDirName}/footer.png`,
                 body: `/screenshots/${outputDirName}/body.png`
             },
-            aiAnalysis: aiResult.analysis,
+            headerAnalysis: aiResult.analysis?.results?.header || null,
+            footerAnalysis: aiResult.analysis?.results?.footer || null,
+            bodyAnalysis: aiResult.analysis?.results?.body || null,
             url: url
         };
 
@@ -131,21 +133,26 @@ function runPythonScript(module, args = []) {
 }
 
 // Helper function to run AI analysis
-async function runAIAnalysis(outputDir) {
+async function runAIAnalysis(outputDir, url) {
     try {
         const headerImagePath = path.join(outputDir, 'header.png');
-        const htmlPath = path.join(outputDir, 'page.html');
+        const footerImagePath = path.join(outputDir, 'footer.png');
+        const headerHtmlPath = path.join(outputDir, 'header.html');
+        const footerHtmlPath = path.join(outputDir, 'footer.html');
         
-        // Check if files exist
-        if (!fs.existsSync(headerImagePath) || !fs.existsSync(htmlPath)) {
-            throw new Error('Required files not found for AI analysis');
+        // Check if required files exist
+        const hasHeader = fs.existsSync(headerImagePath) && fs.existsSync(headerHtmlPath);
+        const hasFooter = fs.existsSync(footerImagePath) && fs.existsSync(footerHtmlPath);
+        
+        if (!hasHeader && !hasFooter) {
+            throw new Error('No header or footer files found for AI analysis');
         }
 
-        // Run AI analysis Python script
-        const aiScriptPath = path.join(__dirname, 'run_ai_analysis.py');
+        // Run comprehensive AI analysis Python script
+        const aiScriptPath = path.join(__dirname, 'middleware.py');
         const pythonPath = path.join(__dirname, '..', 'venv2', 'Scripts', 'python.exe');
         
-        const process = spawn(pythonPath, [aiScriptPath, headerImagePath, htmlPath], {
+        const process = spawn(pythonPath, [aiScriptPath, outputDir, url, 'all'], {
             cwd: __dirname,
             stdio: ['pipe', 'pipe', 'pipe']
         });

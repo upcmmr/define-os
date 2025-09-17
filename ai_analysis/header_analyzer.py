@@ -153,17 +153,17 @@ def _preprocess_html_for_analysis(html_content: str, base_url: str = "") -> str:
     return relevant_html
 
 
-async def analyze_header_elements(header_image_path: Path, html_path: Path, url: str = "") -> Dict[str, Any]:
+async def analyze_header_elements(header_image_path: Path, header_html_path: Path, url: str = "") -> Dict[str, Any]:
     """
     Analyze header image and HTML to extract links and UI elements.
     
     Args:
         header_image_path: Path to the header screenshot
-        html_path: Path to the HTML file
-        url: Optional URL for context
+        header_html_path: Path to the header-specific HTML file
+        url: Base URL for converting relative links to absolute
         
     Returns:
-        Dictionary containing extracted links, elements, and analysis
+        Dictionary containing analysis results with categorized navigation links
     """
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
@@ -175,15 +175,15 @@ async def analyze_header_elements(header_image_path: Path, html_path: Path, url:
     print("    > Loading header image...", file=sys.stderr)
     header_b64 = _encode_image_to_base64(header_image_path)
     
-    # Load and preprocess HTML content
-    print("    > Processing HTML content...", file=sys.stderr)
-    html_content = _load_html_content(html_path)
+    # Load and preprocess header HTML content
+    print("    > Processing header HTML content...", file=sys.stderr)
+    html_content = _load_html_content(header_html_path)
     processed_html = _preprocess_html_for_analysis(html_content, url)
     
     print("    > Sending request to GPT-5...", file=sys.stderr)
     try:
         response = client.chat.completions.create(
-            model="gpt-5",
+            model="gpt-5-mini",
             messages=[
                 {
                     "role": "system",
@@ -331,7 +331,7 @@ Return your analysis as a JSON object with this structure:
                 "success": False,
                 "error": f"Failed to extract AI response: {str(e)}",
                 "image_path": str(header_image_path),
-                "html_path": str(html_path),
+                "html_path": str(header_html_path),
                 "url": url
             }
         
@@ -358,7 +358,7 @@ Return your analysis as a JSON object with this structure:
                 "analysis": analysis_data,
                 "raw_response": raw_text,
                 "image_path": str(header_image_path),
-                "html_path": str(html_path),
+                "html_path": str(header_html_path),
                 "url": url
             }
         else:
@@ -369,7 +369,7 @@ Return your analysis as a JSON object with this structure:
                 "error": f"Failed to extract valid JSON from AI response. AI returned malformed data. Raw response: {raw_text[:500]}",
                 "raw_response": raw_text,
                 "image_path": str(header_image_path),
-                "html_path": str(html_path),
+                "html_path": str(header_html_path),
                 "url": url
             }
             
@@ -378,7 +378,7 @@ Return your analysis as a JSON object with this structure:
             "success": False,
             "error": f"AI analysis failed: {str(e)}",
             "image_path": str(header_image_path),
-            "html_path": str(html_path),
+            "html_path": str(header_html_path),
             "url": url
         }
 
