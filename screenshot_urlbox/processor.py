@@ -37,13 +37,15 @@ class ScreenshotProcessor:
         with open(config_path, 'r') as f:
             return yaml.safe_load(f)
 
-    async def process_url(self, url: str, base_output_dir: Path):
+    async def process_url(self, url: str, base_output_dir: Path, header_height: int = None, footer_height: int = None):
         """
         Process a single URL: analyze elements, capture screenshot, and crop sections.
         
         Args:
             url: The URL to process
             base_output_dir: Directory where output folders will be created
+            header_height: Optional predefined header height (skips detection if provided)
+            footer_height: Optional predefined footer height (skips detection if provided)
         """
         print(f"\n--- Processing {url} ---")
         
@@ -58,9 +60,16 @@ class ScreenshotProcessor:
         header_selectors = ",".join(self.config['header_selectors'])
         footer_selectors = ",".join(self.config['footer_selectors'])
 
-        # Get element heights
-        header_height = await get_element_height(url, header_selectors)
-        footer_height = await get_footer_height_after_scroll(url, footer_selectors)
+        # Get element heights (use predefined if provided, otherwise detect)
+        if header_height is not None:
+            print(f"    > Using predefined header height: {header_height}px")
+        else:
+            header_height = await get_element_height(url, header_selectors)
+            
+        if footer_height is not None:
+            print(f"    > Using predefined footer height: {footer_height}px")
+        else:
+            footer_height = await get_footer_height_after_scroll(url, footer_selectors)
         
         # Extract header, footer, and body HTML content
         print("  > Extracting header, footer, and body HTML content...")
@@ -104,6 +113,8 @@ class ScreenshotProcessor:
         self._crop_sections(fullpage_path, header_height, footer_height, output_path)
         
         print(f"--- Successfully processed {url} ---")
+        print(f"Header height: {header_height}")
+        print(f"Footer height: {footer_height}")
         print(f"   > Output saved in: {output_path}")
 
     async def _capture_full_page(self, url: str, output_path: Path) -> Path:
@@ -158,27 +169,47 @@ async def main():
     the ScreenshotProcessor class directly.
     """
     import sys
+    import argparse
     
+    parser = argparse.ArgumentParser(description='Process website screenshots')
+    parser.add_argument('url', help='URL to process')
+    parser.add_argument('--header-height', type=int, help='Predefined header height in pixels')
+    parser.add_argument('--footer-height', type=int, help='Predefined footer height in pixels')
+    
+    # Handle both old and new argument formats
     if len(sys.argv) < 2:
-        print("Usage: python -m screenshot_urlbox.processor <url1> [url2] ...")
+        print("Usage: python -m screenshot_urlbox.processor <url> [--header-height HEIGHT] [--footer-height HEIGHT]")
         print("Example: python -m screenshot_urlbox.processor https://example.com")
+        print("Example: python -m screenshot_urlbox.processor https://example.com --header-height 120 --footer-height 80")
         return
+    
+    # Parse arguments
+    try:
+        args = parser.parse_args()
+    except SystemExit:
+        # Fallback to old format for backward compatibility
+        if len(sys.argv) >= 2 and not sys.argv[1].startswith('--'):
+            args = type('Args', (), {
+                'url': sys.argv[1],
+                'header_height': None,
+                'footer_height': None
+            })()
+        else:
+            return
     
     CONFIG_PATH = Path(__file__).parent / "config.yaml"
     BASE_OUTPUT_DIR = Path(__file__).parent / "output"
     
-    TARGET_URLS = sys.argv[1:]
-    
     try:
         processor = ScreenshotProcessor(CONFIG_PATH)
-        for url in TARGET_URLS:
-            try:
-                await processor.process_url(url, BASE_OUTPUT_DIR)
-            except Exception as e:
-                print(f"--- FAILED to process {url}: {e} ---")
-                
+        await processor.process_url(
+            args.url, 
+            BASE_OUTPUT_DIR, 
+            header_height=args.header_height,
+            footer_height=args.footer_height
+        )
     except Exception as e:
-        print(f"An error occurred during initialization: {e}")
+        print(f"--- FAILED to process {args.url}: {e} ---")
 
 if __name__ == "__main__":
     asyncio.run(main())

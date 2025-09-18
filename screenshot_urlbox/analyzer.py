@@ -3,13 +3,14 @@ import sys
 from playwright.async_api import async_playwright
 from typing import Optional, Tuple
 
-async def _find_robust_element(page, selectors_string: str):
+async def _find_robust_element(page, selectors_string: str, max_height: int = None):
     """
     Find an element using multiple selectors with validation.
     
     Args:
         page: Playwright page object
         selectors_string: Comma-separated CSS selectors
+        max_height: Optional maximum height limit for header/footer elements
         
     Returns:
         First valid element found, or None
@@ -25,6 +26,10 @@ async def _find_robust_element(page, selectors_string: str):
                     await element.bounding_box() is not None):
                     bounding_box = await element.bounding_box()
                     if bounding_box and bounding_box['height'] > 0 and bounding_box['width'] > 0:
+                        # Add height validation for header/footer elements
+                        if max_height and bounding_box['height'] > max_height:
+                            print(f"    > Skipping {selector} element: too tall ({bounding_box['height']}px > {max_height}px limit)")
+                            continue
                         return element
         except Exception:
             continue  # Try next selector if this one fails
@@ -114,7 +119,7 @@ async def extract_header_footer_body_html(url: str, header_selector: str, footer
             print("    > Extracting header HTML content...")
             header_html = ""
             try:
-                header_element = await _find_robust_element(page, header_selector)
+                header_element = await _find_robust_element(page, header_selector, max_height=500)
                 if header_element:
                     header_html = await header_element.inner_html()
                     print(f"    > Header HTML extracted: {len(header_html)} characters")
@@ -131,7 +136,7 @@ async def extract_header_footer_body_html(url: str, header_selector: str, footer
             print("    > Extracting footer HTML content...")
             footer_html = ""
             try:
-                footer_element = await _find_robust_element(page, footer_selector)
+                footer_element = await _find_robust_element(page, footer_selector, max_height=800)
                 if footer_element:
                     footer_html = await footer_element.inner_html()
                     print(f"    > Footer HTML extracted: {len(footer_html)} characters")
@@ -151,14 +156,14 @@ async def extract_header_footer_body_html(url: str, header_selector: str, footer
                     
                     # If we found header element, remove it from body HTML
                     if header_html:
-                        header_element = await _find_robust_element(page, header_selector)
+                        header_element = await _find_robust_element(page, header_selector, max_height=500)
                         if header_element:
                             header_outer_html = await header_element.evaluate('el => el.outerHTML')
                             body_html = body_html.replace(header_outer_html, '', 1)
                     
                     # If we found footer element, remove it from body HTML
                     if footer_html:
-                        footer_element = await _find_robust_element(page, footer_selector)
+                        footer_element = await _find_robust_element(page, footer_selector, max_height=800)
                         if footer_element:
                             footer_outer_html = await footer_element.evaluate('el => el.outerHTML')
                             body_html = body_html.replace(footer_outer_html, '', 1)
@@ -203,9 +208,14 @@ async def get_element_height(url: str, selector: str) -> int:
             await _multi_stage_load(page, url)
             
             print("    > Searching for header element...")
-            element = await _find_robust_element(page, selector)
+            # Set reasonable height limit for headers (500px max)
+            element = await _find_robust_element(page, selector, max_height=500)
             if not element:
-                raise Exception(f"Could not find visible header element with any of these selectors: {selector}. Check if the page loaded correctly and the selectors are appropriate for this website.")
+                # Try again without height limit as fallback
+                print("    > No header found within height limit, trying without limit...")
+                element = await _find_robust_element(page, selector)
+                if not element:
+                    raise Exception(f"Could not find visible header element with any of these selectors: {selector}. Check if the page loaded correctly and the selectors are appropriate for this website.")
             
             print("    > Measuring header dimensions...")
             bounding_box = await element.bounding_box()
@@ -248,9 +258,14 @@ async def get_footer_height_after_scroll(url: str, selector: str) -> int:
             await _trigger_lazy_loading(page)
             
             print("    > Searching for footer element...")
-            footer = await _find_robust_element(page, selector)
+            # Set reasonable height limit for footers (800px max)
+            footer = await _find_robust_element(page, selector, max_height=800)
             if not footer:
-                raise Exception(f"Could not find visible footer element with any of these selectors: {selector}. Tried scrolling and waiting for lazy-loaded content. Check if the page has a footer or if different selectors are needed.")
+                # Try again without height limit as fallback
+                print("    > No footer found within height limit, trying without limit...")
+                footer = await _find_robust_element(page, selector)
+                if not footer:
+                    raise Exception(f"Could not find visible footer element with any of these selectors: {selector}. Tried scrolling and waiting for lazy-loaded content. Check if the page has a footer or if different selectors are needed.")
             
             print("    > Measuring footer dimensions...")
             bounding_box = await footer.bounding_box()

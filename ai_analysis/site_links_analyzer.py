@@ -238,7 +238,7 @@ async def analyze_site_links(header_image_path: Path, header_html_path: Path,
     header_html = _load_html_content(header_html_path)
     footer_html = _load_html_content(footer_html_path)
     
-    print("    > Sending request to GPT-4...", file=sys.stderr)
+    print("    > Sending request to GPT-5-mini...", file=sys.stderr)
     try:
         response = client.chat.completions.create(
             model="gpt-5-mini",
@@ -321,7 +321,7 @@ Be comprehensive - include every single clickable link you can find in both sect
             ]
         )
         
-        print("    > Processing GPT-4 response...", file=sys.stderr)
+        print("    > Processing GPT-5-mini response...", file=sys.stderr)
         analysis_data, raw_response = _extract_json_from_response(response)
         
         if analysis_data and 'links' in analysis_data:
@@ -331,10 +331,15 @@ Be comprehensive - include every single clickable link you can find in both sect
             
             # Load template names and categorize links
             template_names = load_template_names()
+            print(f"    > Loaded {len(template_names)} template names", file=sys.stderr)
             categorization_result = None
             
             if template_names and links:
+                print(f"    > Starting categorization of {len(links)} links...", file=sys.stderr)
                 categorization_result = await categorize_links_by_template(links, template_names)
+                print(f"    > Categorization completed", file=sys.stderr)
+            else:
+                print(f"    > Skipping categorization - templates: {len(template_names)}, links: {len(links)}", file=sys.stderr)
             
             return {
                 "success": True,
@@ -378,18 +383,18 @@ def print_analysis_results(analysis: Dict[str, Any]) -> None:
     Print analysis results in a formatted way for command line output.
     """
     if not analysis.get("success", False):
-        print(f"❌ Analysis failed: {analysis.get('error', 'Unknown error')}")
+        print(f"Analysis failed: {analysis.get('error', 'Unknown error')}", file=sys.stderr)
         return
     
     links = analysis.get("links", [])
     
-    print(f"\n🔗 Site Links Analysis Results")
-    print(f"🌐 URL: {analysis.get('url', 'Unknown')}")
-    print(f"📊 Total Links Found: {len(links)}")
+    print(f"\nSite Links Analysis Results", file=sys.stderr)
+    print(f"URL: {analysis.get('url', 'Unknown')}", file=sys.stderr)
+    print(f"Total Links Found: {len(links)}", file=sys.stderr)
     
-    print(f"\n📋 **All Links:**")
+    print(f"\nAll Links:", file=sys.stderr)
     for i, link in enumerate(links, 1):
-        print(f"  {i}. {link.get('text', 'Untitled')} → {link.get('url', 'No URL')}")
+        print(f"  {i}. {link.get('text', 'Untitled')} -> {link.get('url', 'No URL')}", file=sys.stderr)
 
 
 # For command line testing
@@ -397,7 +402,7 @@ if __name__ == "__main__":
     import asyncio
     
     if len(sys.argv) != 6:
-        print("Usage: python site_links_analyzer.py <header_image> <header_html> <footer_image> <footer_html> <url>")
+        print("Usage: python site_links_analyzer.py <header_image> <header_html> <footer_image> <footer_html> <url>", file=sys.stderr)
         sys.exit(1)
     
     header_image_path = Path(sys.argv[1])
@@ -409,7 +414,11 @@ if __name__ == "__main__":
     async def main():
         result = await analyze_site_links(header_image_path, header_html_path, 
                                         footer_image_path, footer_html_path, url)
+        # For command line usage, print human-readable results to stderr
+        # and JSON to stdout for programmatic use
         print_analysis_results(result)
-        print(f"\nFull result: {json.dumps(result, indent=2)}")
+        # Output JSON to stdout for the backend to parse
+        print(f"    > Outputting JSON result to stdout", file=sys.stderr)
+        print(json.dumps(result))
     
     asyncio.run(main())
