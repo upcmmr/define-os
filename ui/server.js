@@ -78,6 +78,7 @@ app.post('/process', async (req, res) => {
             headerAnalysis: aiResult.analysis?.results?.header || null,
             footerAnalysis: aiResult.analysis?.results?.footer || null,
             bodyAnalysis: aiResult.analysis?.results?.body || null,
+            siteLinksAnalysis: aiResult.analysis?.results?.sitelinks || null,
             url: url
         };
 

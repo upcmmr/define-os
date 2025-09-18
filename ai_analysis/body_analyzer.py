@@ -134,17 +134,17 @@ def _preprocess_body_html_for_analysis(html_content: str, base_url: str = "") ->
     return processed_html
 
 
-async def analyze_body_elements(body_image_path: Path, body_html_path: Path, url: str = "") -> Dict[str, Any]:
+async def detect_body_template(body_image_path: Path, body_html_path: Path, url: str = "") -> Dict[str, Any]:
     """
-    Analyze body image and HTML to extract links and UI elements.
+    Detect what template type the body content represents using AI analysis.
     
     Args:
         body_image_path: Path to the body image file
         body_html_path: Path to the body HTML file
-        url: Base URL for converting relative links to absolute
+        url: URL of the page for context
         
     Returns:
-        Dictionary containing analysis results with categorized body elements
+        Dictionary containing template detection results with confidence score
     """
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
@@ -153,15 +153,25 @@ async def analyze_body_elements(body_image_path: Path, body_html_path: Path, url
     client = OpenAI(api_key=api_key)
     
     # Load and encode the body image
-    print("    > Loading body image...", file=sys.stderr)
+    print("    > Loading body image for template detection...", file=sys.stderr)
     body_b64 = _encode_image_to_base64(body_image_path)
     
     # Load and preprocess HTML content
-    print("    > Processing body HTML content...", file=sys.stderr)
+    print("    > Processing body HTML content for template detection...", file=sys.stderr)
     html_content = _load_html_content(body_html_path)
     processed_html = _preprocess_body_html_for_analysis(html_content, url)
     
-    print("    > Sending request to GPT-5 for body analysis...", file=sys.stderr)
+    # Extract page title from HTML if available
+    page_title = ""
+    try:
+        import re
+        title_match = re.search(r'<title[^>]*>(.*?)</title>', html_content, re.IGNORECASE | re.DOTALL)
+        if title_match:
+            page_title = title_match.group(1).strip()
+    except:
+        pass
+    
+    print("    > Sending request to GPT-5 for template detection...", file=sys.stderr)
     try:
         response = client.chat.completions.create(
             model="gpt-5-mini",
@@ -169,11 +179,10 @@ async def analyze_body_elements(body_image_path: Path, body_html_path: Path, url
                 {
                     "role": "system",
                     "content": (
-                        "You are an expert web UI analyst. Analyze the provided body image and HTML "
-                        "to extract all links, buttons, navigation elements, and interactive components. "
-                        "Correlate visual elements in the image with their corresponding HTML elements. "
-                        "Focus on extracting ACTUAL URLs from href attributes in the HTML. "
-                        "Respond with valid JSON only containing your analysis."
+                        "You are an expert web template analyst. Analyze the provided body image, HTML content, "
+                        "URL, and page title to determine what type of ecommerce page template this represents. "
+                        "Consider the layout, content structure, and URL patterns to make your determination. "
+                        "Respond with valid JSON only."
                     )
                 },
                 {
@@ -182,128 +191,49 @@ async def analyze_body_elements(body_image_path: Path, body_html_path: Path, url
                         {
                             "type": "text",
                             "text": f"""
-Please analyze this website body content and provide a comprehensive breakdown of all interactive elements.
+Please analyze this website body content and determine what template type it represents.
 
 Website URL: {url}
+Page Title: {page_title}
 
 Body HTML Content:
 {processed_html}
 
-CRITICAL INSTRUCTIONS:
-1. Look at the body image to identify visual elements
-2. Match those visual elements to the HTML code provided
-3. Extract ACTUAL URLs from href attributes in the HTML - USE ABSOLUTE URLS (full URLs starting with http/https)
-4. Convert any relative URLs (starting with /) to absolute URLs using the base domain
-5. For each visual element you see, find its corresponding HTML tag and extract:
-   - href attributes for links (convert to absolute URLs)
-   - class and id attributes for CSS selectors
-   - data-* attributes for JavaScript interactions
+Available template types (use exact names):
+- Homepage
+- Category Page  
+- Search Results
+- Product Detail
+- Cart
+- Checkout
+- My Account
+- Wishlist
+- Comparison Page
+- Store Locator
+- Contact Us
+- Gift Registry
+- Content
 
-Please identify and extract:
-1. All content links with their ACTUAL URLs from HTML href attributes, categorized as follows:
-   - PRODUCT CATEGORIES: Links to product collections, categories, or shopping sections (e.g., "Men's", "Women's", "Electronics", "Clothing", "Sale")
-   - CONTENT: Informational links (e.g., "About Us", "Blog", "Help", "FAQ", "Store Locator", "Contact", "Careers")
-   - TRANSACTIONAL: Account and commerce-related links (e.g., "Login", "Sign Up", "My Account", "Cart", "Checkout", "Wishlist", "Order Status")
-   - SOCIAL: Social media links (e.g., "Facebook", "Twitter", "Instagram", "YouTube")
-   - OTHER: Links that don't fit the above categories
-2. Buttons and their purposes with any associated actions/links
-3. Interactive elements (forms, search boxes, carousels, etc.) with their HTML attributes
-4. Call-to-action elements with their actual links
-5. Any other clickable or interactive components in the main content area
+CONFIDENCE SCORING:
+- 0: No confidence - Cannot determine template type
+- 1: Low confidence - Some indicators but unclear
+- 2: Medium confidence - Clear indicators present
+- 3: High confidence - Very clear indicators (e.g., URL is domain root = Homepage)
+
+ANALYSIS CRITERIA:
+- URL patterns (e.g., "/" = Homepage, "/category/" = Category Page, "/product/" = Product Detail)
+- Page title content
+- Visual layout and structure from image
+- HTML content structure and elements
+- Presence of specific UI components
 
 Return your analysis as a JSON object with this structure:
 {{
-  "navigation_links": {{
-    "product_categories": [
-      {{
-        "text": "Link text visible in image",
-        "url": "ACTUAL URL from href attribute",
-        "css_selector": "CSS selector or class from HTML",
-        "position": "Description of position in body",
-        "category_type": "Description of product category (e.g., 'Men's Clothing', 'Electronics', etc.)"
-      }}
-    ],
-    "content": [
-      {{
-        "text": "Link text visible in image",
-        "url": "ACTUAL URL from href attribute",
-        "css_selector": "CSS selector or class from HTML",
-        "position": "Description of position in body",
-        "content_type": "Type of content (e.g., 'About Us', 'Blog', 'Help', 'Store Locator', etc.)"
-      }}
-    ],
-    "transactional": [
-      {{
-        "text": "Link text visible in image",
-        "url": "ACTUAL URL from href attribute",
-        "css_selector": "CSS selector or class from HTML",
-        "position": "Description of position in body",
-        "transaction_type": "Type of transaction (e.g., 'Account', 'Cart', 'Checkout', 'Wishlist', 'Login', etc.)"
-      }}
-    ],
-    "social": [
-      {{
-        "text": "Link text visible in image",
-        "url": "ACTUAL URL from href attribute",
-        "css_selector": "CSS selector or class from HTML",
-        "position": "Description of position in body",
-        "social_platform": "Social media platform (e.g., 'Facebook', 'Twitter', 'Instagram', etc.)"
-      }}
-    ],
-    "other": [
-      {{
-        "text": "Link text visible in image",
-        "url": "ACTUAL URL from href attribute",
-        "css_selector": "CSS selector or class from HTML",
-        "position": "Description of position in body",
-        "link_type": "Description of link purpose if not fitting other categories"
-      }}
-    ]
-  }},
-  "buttons": [
-    {{
-      "text": "Button text",
-      "type": "Button type/purpose",
-      "url": "URL if button links somewhere",
-      "css_selector": "CSS selector if found",
-      "position": "Description of position in body",
-      "functionality": "Functionality description"
-    }}
-  ],
-  "interactive_elements": [
-    {{
-      "type": "Element type (form, carousel, search, etc.)",
-      "description": "What this element does",
-      "url": "URL if applicable",
-      "css_selector": "CSS selector if found",
-      "position": "Description of position in body",
-      "functionality": "Functionality description"
-    }}
-  ],
-  "call_to_action": [
-    {{
-      "type": "CTA type (e.g., banner, hero section, promotional)",
-      "description": "Description of call-to-action element",
-      "url": "URL if CTA links somewhere",
-      "css_selector": "CSS selector if found",
-      "position": "Description of position in body",
-      "functionality": "Functionality description"
-    }}
-  ],
-  "summary": {{
-    "total_interactive_elements": 0,
-    "navigation_breakdown": {{
-      "product_categories_count": 0,
-      "content_links_count": 0,
-      "transactional_links_count": 0,
-      "social_links_count": 0,
-      "other_links_count": 0
-    }},
-    "has_forms": false,
-    "has_search": false,
-    "has_carousel_or_slider": false,
-    "layout_style": "Description of body layout and main content structure"
-  }}
+  "template_name": "Template name from the list above",
+  "confidence_score": 0-3,
+  "justification": "One sentence explaining why you chose this template and confidence level",
+  "url_indicators": "URL patterns that influenced the decision",
+  "content_indicators": "Content/layout elements that influenced the decision"
 }}
 """
                         },
@@ -318,7 +248,209 @@ Return your analysis as a JSON object with this structure:
             ]
         )
         
-        print("    > Processing AI response...", file=sys.stderr)
+        print("    > Processing template detection response...", file=sys.stderr)
+        # Extract JSON response
+        try:
+            detection_data, raw_text = _extract_json_from_response(response)
+        except Exception as e:
+            print(f"      > Error extracting response: {str(e)}", file=sys.stderr)
+            raise Exception(f"Failed to extract AI response: {str(e)}")
+        
+        if detection_data:
+            template_name = detection_data.get('template_name', 'Unknown')
+            confidence = detection_data.get('confidence_score', 0)
+            justification = detection_data.get('justification', 'No justification provided')
+            
+            # Validate confidence score
+            try:
+                confidence = int(confidence)
+                if confidence < 0 or confidence > 3:
+                    print(f"    > Warning: Invalid confidence score {confidence}, defaulting to 0", file=sys.stderr)
+                    confidence = 0
+            except (ValueError, TypeError):
+                print(f"    > Warning: Non-numeric confidence score '{confidence}', defaulting to 0", file=sys.stderr)
+                confidence = 0
+            
+            print(f"    > Template detection complete: {template_name} (confidence: {confidence}/3)", file=sys.stderr)
+            print(f"      > Justification: {justification}", file=sys.stderr)
+            
+            return {
+                "success": True,
+                "template_name": template_name,
+                "confidence_score": confidence,
+                "justification": justification,
+                "url_indicators": detection_data.get('url_indicators', ''),
+                "content_indicators": detection_data.get('content_indicators', ''),
+                "raw_response": raw_text,
+                "image_path": str(body_image_path),
+                "html_path": str(body_html_path),
+                "url": url,
+                "page_title": page_title
+            }
+        else:
+            print("    > ERROR: Template detection failed to extract structured data", file=sys.stderr)
+            raise Exception(f"Failed to extract valid JSON from AI response. Raw response: {raw_text[:500]}")
+            
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Template detection failed: {str(e)}",
+            "image_path": str(body_image_path),
+            "html_path": str(body_html_path),
+            "url": url
+        }
+
+
+async def analyze_template_features(body_image_path: Path, body_html_path: Path, template_name: str, url: str = "") -> Dict[str, Any]:
+    """
+    Analyze body content against a specific template to identify features.
+    
+    Args:
+        body_image_path: Path to the body image file
+        body_html_path: Path to the body HTML file
+        template_name: Name of the template to analyze against
+        url: Base URL for context
+        
+    Returns:
+        Dictionary containing template feature analysis results
+    """
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise ValueError("OPENAI_API_KEY environment variable is required")
+    
+    client = OpenAI(api_key=api_key)
+    
+    # Load the ecommerce dictionary to get template features
+    print(f"    > Loading template features for {template_name}...", file=sys.stderr)
+    try:
+        script_dir = Path(__file__).parent
+        dict_path = script_dir / "ecommerce_dictionary.json"
+        
+        with open(dict_path, 'r', encoding='utf-8') as f:
+            ecommerce_dict = json.load(f)
+        
+        # Find the template with robust matching
+        template_data = None
+        templates = ecommerce_dict.get('templates', [])
+        
+        # First try exact match (case insensitive)
+        for template in templates:
+            if template.get('name', '').lower() == template_name.lower():
+                template_data = template
+                break
+        
+        # If no exact match, try partial matching (for robustness)
+        if not template_data:
+            for template in templates:
+                template_name_clean = template.get('name', '').lower().replace(' template', '')
+                if template_name_clean == template_name.lower():
+                    template_data = template
+                    break
+        
+        # If still no match, try fuzzy matching on key words
+        if not template_data:
+            template_name_words = set(template_name.lower().split())
+            best_match = None
+            best_score = 0
+            
+            for template in templates:
+                template_words = set(template.get('name', '').lower().replace(' template', '').split())
+                common_words = template_name_words.intersection(template_words)
+                if len(common_words) > best_score:
+                    best_score = len(common_words)
+                    best_match = template
+            
+            if best_match and best_score > 0:
+                template_data = best_match
+                print(f"    > Using fuzzy match: '{template_name}' -> '{template_data.get('name')}'", file=sys.stderr)
+        
+        if not template_data:
+            raise Exception(f"Template '{template_name}' not found in ecommerce dictionary. Available templates: {[t.get('name') for t in templates]}")
+            
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Failed to load template: {str(e)}",
+            "template_name": template_name
+        }
+    
+    # Load and encode the body image
+    print("    > Loading body image for feature analysis...", file=sys.stderr)
+    body_b64 = _encode_image_to_base64(body_image_path)
+    
+    # Load and preprocess HTML content
+    print("    > Processing body HTML content for feature analysis...", file=sys.stderr)
+    html_content = _load_html_content(body_html_path)
+    processed_html = _preprocess_body_html_for_analysis(html_content, url)
+    
+    # Build feature list for analysis
+    features_text = ""
+    for i, feature in enumerate(template_data.get('features', []), 1):
+        features_text += f"{i}. {feature.get('name', 'Unknown')}: {feature.get('description', 'No description')}\n"
+    
+    print(f"    > Sending request to GPT-5 for {template_name} feature analysis...", file=sys.stderr)
+    try:
+        response = client.chat.completions.create(
+            model="gpt-5-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        f"You are an expert web UI analyst specializing in {template_name} pages. "
+                        "Analyze the provided image and HTML to determine which template features are present. "
+                        "Look carefully at both the visual elements in the image and the HTML structure. "
+                        "Respond with valid JSON only."
+                    )
+                },
+                {
+                    "role": "user", 
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": f"""
+Please analyze this {template_name} page and determine which features are present.
+
+Website URL: {url}
+
+HTML Content:
+{processed_html}
+
+Template Features to Check:
+{features_text}
+
+INSTRUCTIONS:
+1. Look at the body image to identify visual elements
+2. Cross-reference with the HTML code provided
+3. For each feature listed above, determine if it's present ("yes") or not present ("no")
+4. Base your decision on both visual evidence from the image AND HTML structure
+5. Be thorough but conservative - only mark "yes" if you can clearly see evidence
+
+Return your analysis as a JSON object with this structure:
+{{
+  "name": "{template_name}",
+  "description": "{template_data.get('description', '')}",
+  "features": [
+    {{
+      "name": "Feature Name",
+      "description": "Feature Description", 
+      "found": "yes" or "no"
+    }}
+  ]
+}}
+"""
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/png;base64,{body_b64}"
+                            }
+                        }
+                    ]
+                }
+            ]
+        )
+        
+        print("    > Processing feature analysis response...", file=sys.stderr)
         # Extract JSON response
         try:
             analysis_data, raw_text = _extract_json_from_response(response)
@@ -327,41 +459,112 @@ Return your analysis as a JSON object with this structure:
             raise Exception(f"Failed to extract AI response: {str(e)}")
         
         if analysis_data:
-            # Count navigation links by category
-            nav_links = analysis_data.get('navigation_links', {})
-            product_cat_count = len(nav_links.get('product_categories', []))
-            content_count = len(nav_links.get('content', []))
-            transactional_count = len(nav_links.get('transactional', []))
-            social_count = len(nav_links.get('social', []))
-            other_count = len(nav_links.get('other', []))
-            total_nav_count = product_cat_count + content_count + transactional_count + social_count + other_count
+            features = analysis_data.get('features', [])
+            found_count = sum(1 for f in features if f.get('found') == 'yes')
+            total_count = len(features)
             
-            button_count = len(analysis_data.get('buttons', []))
-            interactive_count = len(analysis_data.get('interactive_elements', []))
-            cta_count = len(analysis_data.get('call_to_action', []))
-            total_elements = total_nav_count + button_count + interactive_count + cta_count
-            
-            print(f"    > Body AI analysis complete: {total_elements} elements found", file=sys.stderr)
-            print(f"      > Navigation: {product_cat_count} product categories, {content_count} content, {transactional_count} transactional, {social_count} social, {other_count} other", file=sys.stderr)
-            print(f"      > Other: {button_count} buttons, {interactive_count} interactive elements, {cta_count} call-to-action elements", file=sys.stderr)
+            print(f"    > {template_name} feature analysis complete: {found_count}/{total_count} features found", file=sys.stderr)
             
             return {
                 "success": True,
-                "analysis": analysis_data,
-                "raw_response": raw_text,
+                "template_analysis": analysis_data,
                 "image_path": str(body_image_path),
                 "html_path": str(body_html_path),
-                "url": url
+                "url": url,
+                "raw_response": raw_text
             }
         else:
-            print("    > ERROR: Body AI analysis failed to extract structured data", file=sys.stderr)
-            print(f"      > Raw AI response preview: {raw_text[:300]}...", file=sys.stderr)
-            raise Exception(f"Failed to extract valid JSON from AI response. AI returned malformed data. Raw response: {raw_text[:500]}")
+            print("    > ERROR: Feature analysis failed to extract structured data", file=sys.stderr)
+            raise Exception(f"Failed to extract valid JSON from AI response. Raw response: {raw_text[:500]}")
             
     except Exception as e:
         return {
             "success": False,
-            "error": f"Body AI analysis failed: {str(e)}",
+            "error": f"Template feature analysis failed: {str(e)}",
+            "template_name": template_name,
+            "image_path": str(body_image_path),
+            "html_path": str(body_html_path),
+            "url": url
+        }
+
+
+async def analyze_body_elements(body_image_path: Path, body_html_path: Path, url: str = "") -> Dict[str, Any]:
+    """
+    Analyze body image and HTML with template detection and feature analysis.
+    
+    Args:
+        body_image_path: Path to the body image file
+        body_html_path: Path to the body HTML file
+        url: Base URL for converting relative links to absolute
+        
+    Returns:
+        Dictionary containing analysis results with template detection and features
+    """
+    try:
+        # Step 1: Detect template type
+        print("  > Step 1: Detecting template type...", file=sys.stderr)
+        template_detection = await detect_body_template(body_image_path, body_html_path, url)
+        
+        if not template_detection.get("success", False):
+            return {
+                "success": False,
+                "error": f"Template detection failed: {template_detection.get('error', 'Unknown error')}",
+                "image_path": str(body_image_path),
+                "html_path": str(body_html_path),
+                "url": url
+            }
+        
+        template_name = template_detection.get("template_name", "Unknown")
+        confidence_score = template_detection.get("confidence_score", 0)
+        justification = template_detection.get("justification", "No justification provided")
+        
+        # Step 2: Check confidence level
+        if confidence_score <= 1:
+            print(f"  > Low confidence ({confidence_score}/3) - returning template not known", file=sys.stderr)
+            return {
+                "success": True,
+                "template_detection": template_detection,
+                "template_not_known": True,
+                "template_name": template_name,
+                "confidence_score": confidence_score,
+                "justification": justification,
+                "image_path": str(body_image_path),
+                "html_path": str(body_html_path),
+                "url": url
+            }
+        
+        # Step 3: Perform template-specific feature analysis
+        print(f"  > Step 2: Analyzing {template_name} features (confidence: {confidence_score}/3)...", file=sys.stderr)
+        feature_analysis = await analyze_template_features(body_image_path, body_html_path, template_name, url)
+        
+        if not feature_analysis.get("success", False):
+            return {
+                "success": False,
+                "error": f"Feature analysis failed: {feature_analysis.get('error', 'Unknown error')}",
+                "template_detection": template_detection,
+                "image_path": str(body_image_path),
+                "html_path": str(body_html_path),
+                "url": url
+            }
+        
+        # Combine results
+        return {
+            "success": True,
+            "template_detection": template_detection,
+            "template_analysis": feature_analysis.get("template_analysis"),
+            "template_name": template_name,
+            "confidence_score": confidence_score,
+            "justification": justification,
+            "image_path": str(body_image_path),
+            "html_path": str(body_html_path),
+            "url": url,
+            "raw_response": feature_analysis.get("raw_response", "")
+        }
+            
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Body analysis failed: {str(e)}",
             "image_path": str(body_image_path),
             "html_path": str(body_html_path),
             "url": url

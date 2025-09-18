@@ -15,6 +15,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 from ai_analysis.header_analyzer import analyze_header_elements
 from ai_analysis.footer_analyzer import analyze_footer_elements
 from ai_analysis.body_analyzer import analyze_body_elements
+from ai_analysis.site_links_analyzer import analyze_site_links
 
 async def main():
     if len(sys.argv) != 4:
@@ -23,7 +24,7 @@ async def main():
     
     output_dir = Path(sys.argv[1])
     url = sys.argv[2]
-    analysis_type = sys.argv[3]  # "header" or "footer" or "body" or "both" or "all"
+    analysis_type = sys.argv[3]  # "header" or "footer" or "body" or "both" or "all" or "sitelinks"
     
     # Define file paths
     header_image_path = output_dir / "header.png"
@@ -59,6 +60,16 @@ async def main():
                 results["body"] = body_result
             else:
                 results["body"] = {"success": False, "error": "Body image or HTML file not found"}
+
+        if analysis_type in ["sitelinks", "all"]:
+            if (header_image_path.exists() and header_html_path.exists() and 
+                footer_image_path.exists() and footer_html_path.exists()):
+                print("Running site links analysis...", file=sys.stderr)
+                sitelinks_result = await analyze_site_links(header_image_path, header_html_path, 
+                                                          footer_image_path, footer_html_path, url)
+                results["sitelinks"] = sitelinks_result
+            else:
+                results["sitelinks"] = {"success": False, "error": "Header or footer image/HTML files not found"}
         
         # Return combined results
         combined_result = {
