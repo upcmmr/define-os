@@ -90,6 +90,53 @@ def _load_html_content(html_path: Path) -> str:
         return f.read()
 
 
+def _chunk_html_content(html_content: str, chunk_size: int = 48000) -> List[str]:
+    """
+    Split HTML content into chunks of specified size while trying to preserve structure.
+    
+    Args:
+        html_content: The HTML content to chunk
+        chunk_size: Maximum size of each chunk in characters
+        
+    Returns:
+        List of HTML chunks
+    """
+    if len(html_content) <= chunk_size:
+        return [html_content]
+    
+    chunks = []
+    current_pos = 0
+    
+    while current_pos < len(html_content):
+        # Calculate end position for this chunk
+        end_pos = min(current_pos + chunk_size, len(html_content))
+        
+        # If we're not at the end of the content, try to find a good break point
+        if end_pos < len(html_content):
+            # Look for tag boundaries within the last 1000 characters
+            search_start = max(end_pos - 1000, current_pos)
+            
+            # Try to find closing tags as good break points
+            break_points = []
+            for tag in ['</div>', '</section>', '</article>', '</p>', '</li>', '</ul>', '</ol>']:
+                pos = html_content.rfind(tag, search_start, end_pos)
+                if pos > search_start:
+                    break_points.append(pos + len(tag))
+            
+            # Use the latest break point if found
+            if break_points:
+                end_pos = max(break_points)
+        
+        # Extract chunk
+        chunk = html_content[current_pos:end_pos]
+        if chunk.strip():  # Only add non-empty chunks
+            chunks.append(chunk)
+        
+        current_pos = end_pos
+    
+    return chunks
+
+
 def _preprocess_body_html_for_analysis(html_content: str, base_url: str = "") -> str:
     """
     Preprocess body HTML to convert relative URLs to absolute URLs and extract main content.
@@ -156,10 +203,17 @@ async def detect_body_template(body_image_path: Path, body_html_path: Path, url:
     print("    > Loading body image for template detection...", file=sys.stderr)
     body_b64 = _encode_image_to_base64(body_image_path)
     
-    # Load and preprocess HTML content
+    # Load and preprocess HTML content with chunking
     print("    > Processing body HTML content for template detection...", file=sys.stderr)
     html_content = _load_html_content(body_html_path)
     processed_html = _preprocess_body_html_for_analysis(html_content, url)
+    
+    # Use chunking for large HTML content (48KB chunks)
+    html_chunks = _chunk_html_content(processed_html, 48000)
+    print(f"    > Split HTML into {len(html_chunks)} chunks for analysis", file=sys.stderr)
+    
+    # Use the first chunk for template detection (usually contains key indicators)
+    processed_html = html_chunks[0]
     
     # Extract page title from HTML if available
     page_title = ""
@@ -301,6 +355,156 @@ Return your analysis as a JSON object with this structure:
         }
 
 
+async def detect_custom_features(body_image_path: Path, body_html_path: Path, template_name: str, standard_features: List[Dict], url: str = "") -> Dict[str, Any]:
+    """
+    Second AI call to identify custom features not in the standard template.
+    
+    Args:
+        body_image_path: Path to the body image file
+        body_html_path: Path to the body HTML file
+        template_name: Name of the detected template
+        standard_features: List of already identified standard features
+        url: Base URL for context
+        
+    Returns:
+        Dictionary containing custom features analysis results
+    """
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise ValueError("OPENAI_API_KEY environment variable is required")
+    
+    client = OpenAI(api_key=api_key)
+    
+    # Encode image
+    try:
+        body_b64 = _encode_image_to_base64(body_image_path)
+    except Exception as e:
+        raise Exception(f"Failed to encode body image: {str(e)}")
+    
+    # Read and process HTML with chunking
+    try:
+        with open(body_html_path, 'r', encoding='utf-8') as f:
+            html_content = f.read()
+        
+        # Use chunking for large HTML content
+        html_chunks = _chunk_html_content(html_content, 48000)
+        print(f"    > Split HTML into {len(html_chunks)} chunks for custom features analysis", file=sys.stderr)
+        
+        # Use the first chunk for custom features detection
+        processed_html = html_chunks[0]
+    except Exception as e:
+        raise Exception(f"Failed to read body HTML: {str(e)}")
+    
+    # Format standard features for the prompt
+    found_features = [f"- {f['name']}: {f['description']}" for f in standard_features if f.get('found') == 'yes']
+    standard_features_text = "\n".join(found_features) if found_features else "None detected"
+    
+    print(f"    > Sending request to GPT-5-mini for custom features detection on {template_name}...", file=sys.stderr)
+    try:
+        response = client.chat.completions.create(
+            model="gpt-5-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        f"You are an expert web UI analyst specializing in identifying unique custom features on {template_name} pages. "
+                        "Your task is to find additional functionality that goes beyond standard template features. "
+                        "Focus on unique widgets, custom sections, special tools, or innovative UI elements. "
+                        "Respond with valid JSON only."
+                    )
+                },
+                {
+                    "role": "user", 
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": f"""
+Please analyze this {template_name} page and identify CUSTOM features that are NOT in the standard template.
+
+Website URL: {url}
+
+HTML Content:
+{processed_html}
+
+STANDARD FEATURES ALREADY IDENTIFIED:
+{standard_features_text}
+
+INSTRUCTIONS:
+1. Look at the screenshot and HTML for additional functionality beyond the standard features listed above
+2. Identify unique/custom elements specific to this page or site
+3. Focus on features that provide special functionality, custom widgets, unique sections, or innovative UI elements
+4. Examples might include: Live chat widgets, product comparison tools, custom calculators, special promotional sections, unique navigation elements, custom forms, interactive elements, etc.
+5. Only return features that are clearly visible and functional in the screenshot/HTML
+6. Return 3-5 most significant custom features (if any exist)
+7. If no significant custom features are found, return an empty array
+
+NAMING REQUIREMENTS:
+- **Name**: Keep it SHORT (2-4 words max) - concise feature identifier
+- **Description**: Keep it BRIEF (1-2 sentences max) - what it does, not why it's unique
+
+Return your analysis as a JSON object with this structure:
+{{
+  "custom_features": [
+    {{
+      "name": "Live Chat Widget",
+      "description": "Interactive chat support tool for customer assistance."
+    }},
+    {{
+      "name": "Size Guide",
+      "description": "Pop-up sizing chart with measurements and fit recommendations."
+    }}
+  ]
+}}
+"""
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/png;base64,{body_b64}"
+                            }
+                        }
+                    ]
+                }
+            ]
+        )
+        
+        print("    > Processing custom features detection response...", file=sys.stderr)
+        # Extract JSON response
+        try:
+            analysis_data, raw_text = _extract_json_from_response(response)
+        except Exception as e:
+            print(f"      > Error extracting response: {str(e)}", file=sys.stderr)
+            raise Exception(f"Failed to extract AI response: {str(e)}")
+        
+        if analysis_data:
+            custom_features = analysis_data.get('custom_features', [])
+            features_count = len(custom_features)
+            
+            print(f"    > Custom features detection complete: {features_count} custom features found", file=sys.stderr)
+            
+            return {
+                "success": True,
+                "custom_features": custom_features,
+                "image_path": str(body_image_path),
+                "html_path": str(body_html_path),
+                "url": url,
+                "raw_response": raw_text
+            }
+        else:
+            print("    > ERROR: Custom features detection failed to extract structured data", file=sys.stderr)
+            raise Exception(f"Failed to extract valid JSON from AI response. Raw response: {raw_text[:500]}")
+            
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Custom features detection failed: {str(e)}",
+            "template_name": template_name,
+            "image_path": str(body_image_path),
+            "html_path": str(body_html_path),
+            "url": url
+        }
+
+
 async def analyze_template_features(body_image_path: Path, body_html_path: Path, template_name: str, url: str = "") -> Dict[str, Any]:
     """
     Analyze body content against a specific template to identify features.
@@ -378,10 +582,18 @@ async def analyze_template_features(body_image_path: Path, body_html_path: Path,
     print("    > Loading body image for feature analysis...", file=sys.stderr)
     body_b64 = _encode_image_to_base64(body_image_path)
     
-    # Load and preprocess HTML content
+    # Load and preprocess HTML content with chunking
     print("    > Processing body HTML content for feature analysis...", file=sys.stderr)
     html_content = _load_html_content(body_html_path)
     processed_html = _preprocess_body_html_for_analysis(html_content, url)
+    
+    # Use chunking for large HTML content (48KB chunks)
+    html_chunks = _chunk_html_content(processed_html, 48000)
+    print(f"    > Split HTML into {len(html_chunks)} chunks for feature analysis", file=sys.stderr)
+    
+    # For feature analysis, we'll analyze the first chunk (most important content)
+    # TODO: Could be enhanced to analyze multiple chunks and merge results
+    processed_html = html_chunks[0]
     
     # Build feature list for analysis
     features_text = ""
@@ -547,8 +759,13 @@ async def analyze_body_elements(body_image_path: Path, body_html_path: Path, url
                 "url": url
             }
         
-        # Combine results
-        return {
+        # Step 4: Detect custom features not in the standard template
+        print(f"  > Step 3: Detecting custom features for {template_name}...", file=sys.stderr)
+        standard_features = feature_analysis.get("template_analysis", {}).get("features", [])
+        custom_features_analysis = await detect_custom_features(body_image_path, body_html_path, template_name, standard_features, url)
+        
+        # Combine results (include custom features even if detection failed)
+        result = {
             "success": True,
             "template_detection": template_detection,
             "template_analysis": feature_analysis.get("template_analysis"),
@@ -560,6 +777,16 @@ async def analyze_body_elements(body_image_path: Path, body_html_path: Path, url
             "url": url,
             "raw_response": feature_analysis.get("raw_response", "")
         }
+        
+        # Add custom features if detection was successful
+        if custom_features_analysis.get("success", False):
+            result["custom_features"] = custom_features_analysis.get("custom_features", [])
+            print(f"  > Custom features integrated: {len(result['custom_features'])} features", file=sys.stderr)
+        else:
+            result["custom_features"] = []
+            print(f"  > Custom features detection failed: {custom_features_analysis.get('error', 'Unknown error')}", file=sys.stderr)
+        
+        return result
             
     except Exception as e:
         return {

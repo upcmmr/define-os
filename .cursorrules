@@ -1,0 +1,204 @@
+# Cursor Rules for Define-OS Project
+
+## Communication Style
+
+### Assistant Response Format
+- **ALWAYS start responses with "Yo! "** as the first word
+- Use friendly, professional tone throughout
+- Provide clear, actionable guidance
+- Include relevant examples and code snippets
+
+### Analysis-Only Mode
+- **If user prompt starts with "wcc"** (without changing code):
+  - **DO NOT make any code changes or edits**
+  - **DO NOT use write, search_replace, MultiEdit, or any code modification tools**
+  - **ONLY provide recommendations, suggestions, analysis, and explanations**
+  - Focus on understanding, investigating, and advising without implementation
+
+## AI Model Requirements
+
+### CRITICAL: OpenAI Model Usage
+- **ALWAYS use `gpt-5-mini` for ALL AI API calls**
+- **NEVER use GPT-4, GPT-4o, GPT-4-turbo, or any other OpenAI models**
+- **NEVER mention GPT-4 or GPT-4o in code comments, logs, or documentation**
+
+### API Call Standards
+```python
+# ✅ CORRECT - Use this format for all OpenAI calls
+response = client.chat.completions.create(
+    model="gpt-5-mini",  # REQUIRED: Always use gpt-5-mini
+    messages=[...]
+    # DO NOT include temperature parameter
+    # DO NOT include max_tokens parameter
+)
+```
+
+```python
+# ❌ INCORRECT - Never use these
+model="gpt-4"           # FORBIDDEN
+model="gpt-4o"          # FORBIDDEN
+model="gpt-4-turbo"     # FORBIDDEN
+temperature=0.7         # NOT SUPPORTED in gpt-5-mini
+max_tokens=1000         # NOT SUPPORTED in gpt-5-mini
+```
+
+## Development Environment
+
+### Operating System & Shell
+- **Windows OS with PowerShell** - All command line instructions must be PowerShell compatible
+- **Use PowerShell syntax** for commands, file paths, and environment variables
+- **File paths**: Use Windows-style paths with backslashes or `Path` objects
+- **Environment variables**: Use `$env:VARIABLE_NAME` syntax in PowerShell
+
+### Python Virtual Environment
+- **ALWAYS use the `venv` virtual environment** for Python development
+- **Activate venv before running Python scripts**: `venv\Scripts\Activate.ps1`
+- **Install packages in venv**: `pip install package-name` (after activation)
+- **Never install packages globally** - always use the virtual environment
+
+### PowerShell Command Examples
+```powershell
+# ✅ CORRECT - PowerShell compatible commands
+.\venv\Scripts\Activate.ps1                    # Activate virtual environment
+python ai_analysis\body_analyzer.py            # Run Python script
+cd ui; node server.js                          # Change directory and run Node
+$env:OPENAI_API_KEY = "your-key-here"         # Set environment variable
+```
+
+```bash
+# ❌ INCORRECT - Unix/Linux commands (don't use these)
+source venv/bin/activate                       # Unix activation
+export OPENAI_API_KEY="your-key-here"         # Unix environment variable
+python ai_analysis/body_analyzer.py           # Unix file paths
+```
+
+## Code Quality Standards
+
+### Python Code
+- Use `async/await` for all AI API calls
+- Handle exceptions gracefully with try/catch blocks
+- Use `print(..., file=sys.stderr)` for logging (not stdout)
+- Use `typing` hints: `Dict`, `List`, `Any`, `Optional`, `Tuple`
+- Use `Path` objects for file operations, not strings
+- **Always assume venv is activated** when writing Python code
+- **Use Windows-compatible file paths** with `pathlib.Path`
+
+### JavaScript/Frontend
+- Use modern ES6+ syntax
+- Cache DOM elements to avoid repeated queries
+- Use template literals for HTML generation
+- Handle errors with proper user feedback
+
+### File Structure
+- Keep AI analysis functions in `ai_analysis/` directory
+- Use descriptive function names: `detect_custom_features()`, `analyze_template_features()`
+- Separate concerns: detection vs analysis vs rendering
+
+## AI Analysis Patterns
+
+### Standard Analysis Flow
+1. **Template Detection**: Identify page type (Homepage, Product Detail, etc.)
+2. **Standard Features**: Check predefined template features
+3. **Custom Features**: Detect unique features not in template
+4. **Result Combination**: Merge standard + custom features
+
+### Prompt Engineering
+- Use clear, specific instructions
+- Include context (URL, page type, existing features)
+- Request structured JSON responses
+- Provide examples of expected output
+- Be conservative in feature detection
+
+### Error Handling
+```python
+# Always include error handling for AI calls
+try:
+    response = client.chat.completions.create(model="gpt-5-mini", ...)
+    analysis_data, raw_text = _extract_json_from_response(response)
+    if not analysis_data:
+        raise Exception("Failed to extract valid JSON")
+except Exception as e:
+    return {"success": False, "error": f"Analysis failed: {str(e)}"}
+```
+
+## Frontend Integration
+
+### Feature Display
+- **Standard Features**: Gray background, read-only, checkbox based on AI detection
+- **AI Custom Features**: Green background, pre-populated, editable
+- **Manual Custom Features**: Blue background, empty, user-added
+
+### State Management
+- Use `appState` object for application state
+- Cache DOM elements with helper functions
+- Update UI incrementally with Server-Sent Events
+
+## Security & Performance
+
+### Input Validation
+- Limit HTML content size (8000 chars max)
+- Validate file paths and existence
+- Sanitize user inputs in frontend
+
+### Resource Management
+- Close SSE connections properly
+- Clean up temporary files
+- Handle background processes correctly
+
+## Testing & Debugging
+
+### Environment Setup for Testing
+```powershell
+# Always start with these commands for testing
+.\venv\Scripts\Activate.ps1                    # Activate virtual environment
+cd C:\dev\define-os                            # Navigate to project root
+python --version                               # Verify Python version
+pip list                                       # Check installed packages
+```
+
+### Running the Application
+```powershell
+# Backend (Python scripts)
+.\venv\Scripts\Activate.ps1
+python ai_analysis\body_analyzer.py <args>
+
+# Frontend (Node.js server)
+cd ui
+node server.js
+
+# Full application test
+.\venv\Scripts\Activate.ps1
+cd ui
+node server.js
+# Open browser to http://localhost:3000
+```
+
+### Logging Standards
+- Use descriptive log messages with context
+- Include step numbers: "Step 1: Detecting template type..."
+- Log success/failure with counts: "Found 5/12 features"
+- Separate human-readable logs (stderr) from JSON output (stdout)
+- **Use Windows-compatible paths** in log messages
+
+### Error Messages
+- Provide specific error context
+- Include file paths and URLs when relevant
+- Use consistent error response format
+- **Use Windows path format** in error messages (backslashes or Path objects)
+
+## Documentation
+
+### Code Comments
+- Explain complex AI prompts and their purpose
+- Document function parameters and return types
+- Include examples for non-obvious functionality
+
+### Commit Messages
+- Use descriptive commit messages
+- Reference specific features or bug fixes
+- Include context about AI model usage when relevant
+
+---
+
+## REMINDER: GPT-5-MINI ONLY
+**This project exclusively uses `gpt-5-mini` for all AI functionality. Any code using other OpenAI models will be rejected.**

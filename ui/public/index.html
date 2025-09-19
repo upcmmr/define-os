@@ -295,11 +295,13 @@
                 return html;
             }
             
-            // Display categorized links
+            // Display categorized links in template order
             const categorizedLinks = categorization.categorized_links;
+            const templateOrder = categorization.template_order || Object.keys(categorizedLinks);
             let html = '';
             
-            Object.keys(categorizedLinks).forEach(templateName => {
+            // Use template order from the dictionary, only show templates with links
+            templateOrder.forEach(templateName => {
                 const templateLinks = categorizedLinks[templateName];
                 if (templateLinks && templateLinks.length > 0) {
                     // Add icons for different template types
@@ -320,33 +322,94 @@
                             <h3 class="text-lg font-medium text-gray-700 mb-3 flex items-center">
                                 ${icon} ${templateName} (${templateLinks.length})
                             </h3>
-                            <div class="space-y-2 pl-4">
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full bg-white border border-gray-200 rounded-lg table-fixed">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">Select</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/3">Page Name</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/3">Link</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-200">
                     `;
                     
                     templateLinks.forEach((link, index) => {
-                        const linkId = `link_${templateName}_${index}`;
+                        const linkId = `link_${templateName.replace(/\s+/g, '_')}_${index}`;
                         const checkedAttr = '';
                         const disabledAttr = '';
-                        const labelClass = 'cursor-pointer';
-                        const bgClass = 'hover:bg-gray-50';
                         
                         html += `
-                            <div class="flex items-center space-x-3 p-2 ${bgClass} rounded">
-                                <input type="checkbox" id="${linkId}" class="w-4 h-4 text-blue-600" onchange="updateSelectedLinks()" data-url="${link.url}" ${checkedAttr} ${disabledAttr}>
-                                <label for="${linkId}" class="flex-1 ${labelClass}">
-                                    <span class="font-medium text-gray-900">${link.text || 'Untitled'}</span>
-                                    <span class="text-sm text-gray-500 ml-2">${link.url || ''}</span>
-                                </label>
-                            </div>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-2 w-16">
+                                    <input type="checkbox" id="${linkId}" class="w-4 h-4 text-blue-600 rounded" onchange="updateSelectedLinks()" data-url="${link.url}" ${checkedAttr} ${disabledAttr}>
+                                </td>
+                                <td class="px-4 py-2 w-1/3">
+                                    <span class="font-medium text-gray-900 truncate block">${link.text || 'Untitled'}</span>
+                                </td>
+                                <td class="px-4 py-2 w-2/3">
+                                    <a href="${link.url}" target="_blank" class="text-blue-600 hover:text-blue-800 underline text-sm break-all">${link.url}</a>
+                                </td>
+                            </tr>
                         `;
                     });
                     
                     html += `
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     `;
                 }
             });
+            
+            // Add Unknown category if it exists and has links
+            if (categorizedLinks['Unknown'] && categorizedLinks['Unknown'].length > 0) {
+                const templateLinks = categorizedLinks['Unknown'];
+                html += `
+                    <div class="mb-6">
+                        <h3 class="text-lg font-medium text-gray-700 mb-3 flex items-center">
+                            ❓ Unknown (${templateLinks.length})
+                        </h3>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full bg-white border border-gray-200 rounded-lg table-fixed">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">Select</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/3">Page Name</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/3">Link</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200">
+                `;
+                
+                templateLinks.forEach((link, index) => {
+                    const linkId = `link_Unknown_${index}`;
+                    const checkedAttr = '';
+                    const disabledAttr = '';
+                    
+                    html += `
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-2 w-16">
+                                <input type="checkbox" id="${linkId}" class="w-4 h-4 text-blue-600 rounded" onchange="updateSelectedLinks()" data-url="${link.url}" ${checkedAttr} ${disabledAttr}>
+                            </td>
+                            <td class="px-4 py-2 w-1/3">
+                                <span class="font-medium text-gray-900 truncate block">${link.text || 'Untitled'}</span>
+                            </td>
+                            <td class="px-4 py-2 w-2/3">
+                                <a href="${link.url}" target="_blank" class="text-blue-600 hover:text-blue-800 underline text-sm break-all">${link.url}</a>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
             
             return html;
         }
@@ -600,6 +663,48 @@
             return description.replace(/\[oaicite:\d+\]\{index=\d+\}/g, '').trim();
         }
 
+        function renderAIDetectedCustomFeatures(customFeatures, analysisType) {
+            if (!customFeatures || customFeatures.length === 0) {
+                return '<!-- No AI-detected custom features -->';
+            }
+
+            return customFeatures.map((feature, index) => {
+                const featureId = `feature_${analysisType}_ai_custom_${index}`;
+                
+                return `
+                    <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded border">
+                        <input type="checkbox" 
+                               id="${featureId}" 
+                               checked
+                               class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500">
+                        
+                        <div class="flex-1 grid grid-cols-12 gap-3 items-center">
+                            <div class="col-span-2">
+                                <input type="text" 
+                                       class="w-full text-sm font-bold border border-gray-300 rounded px-2 py-1 focus:ring-blue-500 focus:border-blue-500" 
+                                       placeholder="Feature name"
+                                       value="${feature.name || ''}">
+                            </div>
+                            
+                            <div class="col-span-6">
+                                <input type="text" 
+                                       class="w-full text-sm border border-gray-300 rounded px-2 py-1 focus:ring-blue-500 focus:border-blue-500" 
+                                       placeholder="Feature description"
+                                       value="${cleanDescription(feature.description || '')}">
+                            </div>
+                            
+                            <div class="col-span-4">
+                                <textarea id="${featureId}_notes" 
+                                          class="w-full text-sm border border-gray-300 rounded px-2 py-1 focus:ring-blue-500 focus:border-blue-500" 
+                                          rows="1" 
+                                          placeholder="Add notes"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
         function getPageDisplayName(url) {
             try {
                 const urlObj = new URL(url);
@@ -623,36 +728,12 @@
         function addNewFeature(analysisType) {
             console.log('Adding new feature for analysis type:', analysisType);
             
-            // Find or create the custom features section
-            let customSection = document.getElementById(`custom-features-${analysisType}`);
-            
-            if (!customSection) {
-                // Find the main content container - look for the div that contains the features
-                const mainContainer = document.querySelector('.space-y-6 > .bg-white');
-                if (!mainContainer) {
-                    console.error('Could not find main container for custom features');
-                    return;
-                }
-                
-                const customSectionHtml = `
-                    <div id="custom-features-${analysisType}" class="mt-8">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Custom Features</h3>
-                        <div id="custom-features-container-${analysisType}" class="space-y-3">
-                        </div>
-                    </div>
-                `;
-                
-                mainContainer.insertAdjacentHTML('beforeend', customSectionHtml);
-                customSection = document.getElementById(`custom-features-${analysisType}`);
-                console.log('Created custom features section:', customSection);
-            }
-            
-            // Add new feature to the custom section
+            // Find the custom features container (now always exists)
             const container = document.getElementById(`custom-features-container-${analysisType}`);
             if (container) {
                 addFeatureToContainer(container, analysisType);
             } else {
-                console.error('Could not find custom features container');
+                console.error('Could not find custom features container for:', analysisType);
             }
         }
         
@@ -661,15 +742,16 @@
             const featureId = `feature_${analysisType}_custom_${featureCount}`;
             
             const newFeatureHtml = `
-                <div class="flex items-center space-x-3 p-3 bg-blue-50 rounded border border-blue-200">
+                <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded border">
                     <input type="checkbox" 
                            id="${featureId}" 
+                           checked
                            class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500">
                     
                     <div class="flex-1 grid grid-cols-12 gap-3 items-center">
                         <div class="col-span-2">
                             <input type="text" 
-                                   class="w-full text-sm border border-gray-300 rounded px-2 py-1 focus:ring-blue-500 focus:border-blue-500" 
+                                   class="w-full text-sm font-bold border border-gray-300 rounded px-2 py-1 focus:ring-blue-500 focus:border-blue-500" 
                                    placeholder="Feature name"
                                    value="">
                         </div>
@@ -693,6 +775,8 @@
             
             const newElement = document.createElement('div');
             newElement.innerHTML = newFeatureHtml;
+            
+            // Add the new feature to the container (+ button is outside the container now)
             container.appendChild(newElement.firstElementChild);
             
             console.log('Added new feature to container:', container, 'Feature ID:', featureId);
@@ -873,23 +957,25 @@
                                         `;
                                     }).join('')}
                                 </div>
-                                <div class="mt-4 flex justify-center">
-                                    <button onclick="addNewFeature('${analysisType}')" 
-                                            class="w-8 h-8 flex items-center justify-center text-blue-600 hover:text-white hover:bg-blue-600 bg-blue-50 rounded-full border border-blue-300 hover:border-blue-600 transition-all duration-200 text-lg font-medium">
-                                        +
-                                    </button>
-                                </div>
                             ` : `
                                 <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                                     <p class="text-yellow-700">No features detected or analysis data unavailable.</p>
                                 </div>
-                                <div class="mt-4 flex justify-center">
-                                    <button onclick="addNewFeature('${analysisType}')" 
-                                            class="w-8 h-8 flex items-center justify-center text-blue-600 hover:text-white hover:bg-blue-600 bg-blue-50 rounded-full border border-blue-300 hover:border-blue-600 transition-all duration-200 text-lg font-medium">
-                                        +
-                                    </button>
-                                </div>
                             `}
+                            
+            <!-- Custom Features Section - Always Visible -->
+            <div class="mt-8">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Custom Features</h3>
+                <div id="custom-features-container-${analysisType}" class="space-y-3">
+                    ${renderAIDetectedCustomFeatures(analysisData.custom_features || [], analysisType)}
+                </div>
+                <div class="mt-4 flex justify-center">
+                    <button onclick="addNewFeature('${analysisType}')" 
+                            class="w-8 h-8 flex items-center justify-center text-blue-600 hover:text-white hover:bg-blue-600 bg-blue-50 rounded-full border border-blue-300 hover:border-blue-600 transition-all duration-200 text-lg font-medium">
+                        +
+                    </button>
+                </div>
+            </div>
                         </div>
                     </div>
                 </div>
@@ -963,23 +1049,25 @@
                                         `;
                                     }).join('')}
                                 </div>
-                                <div class="mt-4 flex justify-center">
-                                    <button onclick="addNewFeature('body')" 
-                                            class="w-8 h-8 flex items-center justify-center text-blue-600 hover:text-white hover:bg-blue-600 bg-blue-50 rounded-full border border-blue-300 hover:border-blue-600 transition-all duration-200 text-lg font-medium">
-                                        +
-                                    </button>
-                                </div>
                             ` : `
                                 <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                                     <p class="text-yellow-700">No features detected or analysis data unavailable.</p>
                                 </div>
-                                <div class="mt-4 flex justify-center">
-                                    <button onclick="addNewFeature('body')" 
-                                            class="w-8 h-8 flex items-center justify-center text-blue-600 hover:text-white hover:bg-blue-600 bg-blue-50 rounded-full border border-blue-300 hover:border-blue-600 transition-all duration-200 text-lg font-medium">
-                                        +
-                                    </button>
-                                </div>
                             `}
+                            
+            <!-- Custom Features Section - Always Visible -->
+            <div class="mt-8">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Custom Features</h3>
+                <div id="custom-features-container-body" class="space-y-3">
+                    ${renderAIDetectedCustomFeatures(pageData.bodyAnalysis?.custom_features || [], 'body')}
+                </div>
+                <div class="mt-4 flex justify-center">
+                    <button onclick="addNewFeature('body')" 
+                            class="w-8 h-8 flex items-center justify-center text-blue-600 hover:text-white hover:bg-blue-600 bg-blue-50 rounded-full border border-blue-300 hover:border-blue-600 transition-all duration-200 text-lg font-medium">
+                        +
+                    </button>
+                </div>
+            </div>
                         </div>
                     </div>
                 </div>
@@ -1115,7 +1203,9 @@
                     // Header image
                     html += `<div class="mb-8">`;
                     html += `<h2 class="text-2xl font-semibold text-gray-800 mb-4">Screenshot</h2>`;
-                    html += `<img src="${currentData.images.header}" alt="Header screenshot" class="max-w-full h-auto shadow-lg rounded-lg border">`;
+                    html += `<div class="flex justify-center">`;
+                    html += `<img src="${currentData.images.header}" alt="Header screenshot" class="w-3/4 h-auto shadow-lg rounded-lg border">`;
+                    html += `</div>`;
                     html += `</div>`;
                     
                     // Header template analysis
@@ -1138,7 +1228,9 @@
                     // Body image
                     html += `<div class="mb-8">`;
                     html += `<h2 class="text-2xl font-semibold text-gray-800 mb-4">Screenshot</h2>`;
-                    html += `<img src="${currentData.images.body}" alt="Body screenshot" class="max-w-full h-auto shadow-lg rounded-lg border">`;
+                    html += `<div class="flex justify-center">`;
+                    html += `<img src="${currentData.images.body}" alt="Body screenshot" class="w-3/4 h-auto shadow-lg rounded-lg border">`;
+                    html += `</div>`;
                     html += `</div>`;
                     
                     // Body template analysis
@@ -1212,7 +1304,9 @@
                     // Footer image
                     html += `<div class="mb-8">`;
                     html += `<h2 class="text-2xl font-semibold text-gray-800 mb-4">Screenshot</h2>`;
-                    html += `<img src="${currentData.images.footer}" alt="Footer screenshot" class="max-w-full h-auto shadow-lg rounded-lg border">`;
+                    html += `<div class="flex justify-center">`;
+                    html += `<img src="${currentData.images.footer}" alt="Footer screenshot" class="w-3/4 h-auto shadow-lg rounded-lg border">`;
+                    html += `</div>`;
                     html += `</div>`;
                     
                     // Footer template analysis
@@ -1252,8 +1346,10 @@
                 
                 const categorizedLinks = categorization.categorized_links;
                 
-                // Display each template category
-                Object.keys(categorizedLinks).forEach(templateName => {
+                // Display each template category in dictionary order
+                const templateOrder = categorization.template_order || Object.keys(categorizedLinks);
+                
+                templateOrder.forEach(templateName => {
                     const templateLinks = categorizedLinks[templateName];
                     if (templateLinks && templateLinks.length > 0) {
                         html += `<div class="mb-6 bg-white p-4 rounded-lg border border-gray-200">`;
@@ -1275,22 +1371,66 @@
                         html += `${icon} ${templateName} (${templateLinks.length})`;
                         html += `</h3>`;
                         
-                        html += `<div class="space-y-2">`;
+                        html += `<div class="overflow-x-auto">`;
+                        html += `<table class="min-w-full bg-white border border-gray-200 rounded-lg table-fixed">`;
+                        html += `<thead class="bg-gray-50">`;
+                        html += `<tr>`;
+                        html += `<th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/3">Page Name</th>`;
+                        html += `<th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/3">Link</th>`;
+                        html += `</tr>`;
+                        html += `</thead>`;
+                        html += `<tbody class="divide-y divide-gray-200">`;
+                        
                         templateLinks.forEach(link => {
                             const linkText = link.text || 'Untitled Link';
                             const linkUrl = link.url || '#';
                             
-                            html += `<div class="flex items-center space-x-2 pl-4">`;
-                            html += `<span class="text-gray-400">•</span>`;
-                            html += `<span class="font-medium text-gray-900">${linkText}</span>`;
-                            html += `<span class="text-gray-400">→</span>`;
-                            html += `<a href="${linkUrl}" target="_blank" class="text-blue-600 hover:text-blue-800 underline text-sm break-all">${linkUrl}</a>`;
-                            html += `</div>`;
+                            html += `<tr class="hover:bg-gray-50">`;
+                            html += `<td class="px-4 py-2 w-1/3"><span class="font-medium text-gray-900 truncate block">${linkText}</span></td>`;
+                            html += `<td class="px-4 py-2 w-2/3"><a href="${linkUrl}" target="_blank" class="text-blue-600 hover:text-blue-800 underline text-sm break-all">${linkUrl}</a></td>`;
+                            html += `</tr>`;
                         });
+                        
+                        html += `</tbody>`;
+                        html += `</table>`;
                         html += `</div>`;
                         html += `</div>`;
                     }
                 });
+                
+                // Add Unknown category if it exists and has links
+                if (categorizedLinks['Unknown'] && categorizedLinks['Unknown'].length > 0) {
+                    const templateLinks = categorizedLinks['Unknown'];
+                    html += `<div class="mb-6 bg-white p-4 rounded-lg border border-gray-200">`;
+                    html += `<h3 class="text-lg font-medium text-gray-700 mb-3 flex items-center">`;
+                    html += `❓ Unknown (${templateLinks.length})`;
+                    html += `</h3>`;
+                    
+                    html += `<div class="overflow-x-auto">`;
+                    html += `<table class="min-w-full bg-white border border-gray-200 rounded-lg table-fixed">`;
+                    html += `<thead class="bg-gray-50">`;
+                    html += `<tr>`;
+                    html += `<th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/3">Page Name</th>`;
+                    html += `<th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/3">Link</th>`;
+                    html += `</tr>`;
+                    html += `</thead>`;
+                    html += `<tbody class="divide-y divide-gray-200">`;
+                    
+                    templateLinks.forEach(link => {
+                        const linkText = link.text || 'Untitled Link';
+                        const linkUrl = link.url || '#';
+                        
+                        html += `<tr class="hover:bg-gray-50">`;
+                        html += `<td class="px-4 py-2 w-1/3"><span class="font-medium text-gray-900 truncate block">${linkText}</span></td>`;
+                        html += `<td class="px-4 py-2 w-2/3"><a href="${linkUrl}" target="_blank" class="text-blue-600 hover:text-blue-800 underline text-sm break-all">${linkUrl}</a></td>`;
+                        html += `</tr>`;
+                    });
+                    
+                    html += `</tbody>`;
+                    html += `</table>`;
+                    html += `</div>`;
+                    html += `</div>`;
+                }
                 
                 html += `</div>`;
                 

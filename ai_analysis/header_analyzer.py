@@ -83,6 +83,148 @@ def load_header_template() -> dict:
         raise Exception(f"Failed to load header template: {str(e)}")
 
 
+async def detect_custom_features(header_image_path: Path, header_html_path: Path, standard_features: List[Dict], url: str = "") -> Dict[str, Any]:
+    """
+    Second AI call to identify custom features not in the standard header template.
+    
+    Args:
+        header_image_path: Path to the header image file
+        header_html_path: Path to the header HTML file
+        standard_features: List of already identified standard features
+        url: Base URL for context
+        
+    Returns:
+        Dictionary containing custom features analysis results
+    """
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise ValueError("OPENAI_API_KEY environment variable is required")
+    
+    client = OpenAI(api_key=api_key)
+    
+    # Encode image
+    try:
+        header_b64 = _encode_image_to_base64(header_image_path)
+    except Exception as e:
+        raise Exception(f"Failed to encode header image: {str(e)}")
+    
+    # Read HTML content
+    try:
+        with open(header_html_path, 'r', encoding='utf-8') as f:
+            html_content = f.read()
+        processed_html = html_content[:32000]  # Adaptive limit for header custom features
+    except Exception as e:
+        raise Exception(f"Failed to read header HTML: {str(e)}")
+    
+    # Format standard features for the prompt
+    found_features = [f"- {f['name']}: {f['description']}" for f in standard_features if f.get('found') == 'yes']
+    standard_features_text = "\n".join(found_features) if found_features else "None detected"
+    
+    print(f"    > Sending request to GPT-5-mini for custom header features detection...", file=sys.stderr)
+    try:
+        response = client.chat.completions.create(
+            model="gpt-5-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are an expert web UI analyst specializing in identifying unique custom features in website headers. "
+                        "Your task is to find additional functionality that goes beyond standard header template features. "
+                        "Focus on unique widgets, custom sections, special tools, or innovative UI elements in the header area. "
+                        "Respond with valid JSON only."
+                    )
+                },
+                {
+                    "role": "user", 
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": f"""
+Please analyze this website header and identify CUSTOM features that are NOT in the standard header template.
+
+Website URL: {url}
+
+HTML Content:
+{processed_html}
+
+STANDARD HEADER FEATURES ALREADY IDENTIFIED:
+{standard_features_text}
+
+INSTRUCTIONS:
+1. Look at the header screenshot and HTML for additional functionality beyond the standard features listed above
+2. Identify unique/custom elements specific to this header or site
+3. Focus on features that provide special functionality, custom widgets, unique sections, or innovative UI elements
+4. Examples might include: Custom mega menus, special promotional banners, unique search features, custom user tools, interactive elements, special navigation patterns, etc.
+5. Only return features that are clearly visible and functional in the screenshot/HTML
+6. Return 2-4 most significant custom header features (if any exist)
+7. If no significant custom features are found, return an empty array
+
+NAMING REQUIREMENTS:
+- **Name**: Keep it SHORT (2-4 words max) - concise feature identifier
+- **Description**: Keep it BRIEF (1-2 sentences max) - what it does, not why it's unique
+
+Return your analysis as a JSON object with this structure:
+{{
+  "custom_features": [
+    {{
+      "name": "Mega Menu",
+      "description": "Large dropdown menu with product categories and featured items."
+    }},
+    {{
+      "name": "Promo Banner",
+      "description": "Rotating promotional banner with current sales and offers."
+    }}
+  ]
+}}
+"""
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/png;base64,{header_b64}"
+                            }
+                        }
+                    ]
+                }
+            ]
+        )
+        
+        print("    > Processing custom header features detection response...", file=sys.stderr)
+        # Extract JSON response
+        try:
+            analysis_data, raw_text = _extract_json_from_response(response)
+        except Exception as e:
+            print(f"      > Error extracting response: {str(e)}", file=sys.stderr)
+            raise Exception(f"Failed to extract AI response: {str(e)}")
+        
+        if analysis_data:
+            custom_features = analysis_data.get('custom_features', [])
+            features_count = len(custom_features)
+            
+            print(f"    > Custom header features detection complete: {features_count} custom features found", file=sys.stderr)
+            
+            return {
+                "success": True,
+                "custom_features": custom_features,
+                "image_path": str(header_image_path),
+                "html_path": str(header_html_path),
+                "url": url,
+                "raw_response": raw_text
+            }
+        else:
+            print("    > ERROR: Custom header features detection failed to extract structured data", file=sys.stderr)
+            raise Exception(f"Failed to extract valid JSON from AI response. Raw response: {raw_text[:500]}")
+            
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Custom header features detection failed: {str(e)}",
+            "image_path": str(header_image_path),
+            "html_path": str(header_html_path),
+            "url": url
+        }
+
+
 async def analyze_header_elements(header_image_path: Path, header_html_path: Path, url: str = "") -> Dict[str, Any]:
     """
     Analyze header image and HTML against ecommerce template to identify features.
@@ -121,6 +263,8 @@ async def analyze_header_elements(header_image_path: Path, header_html_path: Pat
     # Load header HTML content
     print("    > Processing header HTML content...", file=sys.stderr)
     html_content = _load_html_content(header_html_path)
+    # Adaptive HTML size limit for headers (32KB to cover all experienced files)
+    html_content = html_content[:32000]
     
     print("    > Sending request to GPT-5...", file=sys.stderr)
     try:
@@ -202,7 +346,14 @@ Be thorough but conservative - only mark "found": "yes" if you can clearly ident
         
         if analysis_data:
             print("    > Header template analysis completed successfully", file=sys.stderr)
-            return {
+            
+            # Step 2: Detect custom features not in the standard template
+            print("    > Detecting custom header features...", file=sys.stderr)
+            standard_features = analysis_data.get("features", [])
+            custom_features_analysis = await detect_custom_features(header_image_path, header_html_path, standard_features, url)
+            
+            # Combine results (include custom features even if detection failed)
+            result = {
                 "success": True,
                 "template_analysis": analysis_data,
                 "image_path": str(header_image_path),
@@ -210,6 +361,16 @@ Be thorough but conservative - only mark "found": "yes" if you can clearly ident
                 "url": url,
                 "raw_response": raw_response
             }
+            
+            # Add custom features if detection was successful
+            if custom_features_analysis.get("success", False):
+                result["custom_features"] = custom_features_analysis.get("custom_features", [])
+                print(f"    > Custom header features integrated: {len(result['custom_features'])} features", file=sys.stderr)
+            else:
+                result["custom_features"] = []
+                print(f"    > Custom header features detection failed: {custom_features_analysis.get('error', 'Unknown error')}", file=sys.stderr)
+            
+            return result
         else:
             print("    > Failed to parse JSON from GPT-5 response", file=sys.stderr)
             return {

@@ -9,6 +9,11 @@ header_selectors:
   - ".main-header"
   - "[role='banner']"
   - "nav"
+  - ".site-header, .main-header"
+  - ".header-container, .header-wrapper"
+  - ".top-bar + header, .promo-bar + header"
+  - ".navbar-container, .navigation-container"
+  - "[data-testid*='header'], [data-cy*='header']"
 
 # CSS selectors for footer elements (prioritized order)
 footer_selectors:
